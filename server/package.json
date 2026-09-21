@@ -1,0 +1,30 @@
+{
+  "name": "pulsechat-server",
+  "version": "1.0.0",
+  "description": "PulseChat backend - Express, Socket.io, Mongoose, JWT, WebRTC Signaling",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "seed": "node seed.js",
+    "lint": "oxlint index.js seed.js routes/ models/ socket/ tests/",
+    "test": "node tests/auth.test.js && node tests/chat.test.js && node tests/image_chat.test.js && node tests/broadcast_group.test.js && node tests/videocall.test.js",
+    "test:auth": "node tests/auth.test.js",
+    "test:chat": "node tests/chat.test.js",
+    "test:image": "node tests/image_chat.test.js",
+    "test:broadcast": "node tests/broadcast_group.test.js",
+    "test:video": "node tests/videocall.test.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.3.0",
+    "socket.io": "^4.7.5"
+  },
+  "devDependencies": {
+    "oxlint": "^1.83.0"
+  }
+}

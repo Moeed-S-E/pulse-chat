@@ -1,0 +1,256 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-pulse-blue: #5B6CFF;
+  --color-pulse-purple: #7C4DFF;
+  --color-pulse-green: #10B981;
+  --color-pulse-red: #EF4444;
+  --color-pulse-dark-bg: #0B0F19;
+  --color-pulse-panel-bg: #111827;
+
+  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  --shadow-pulse: 0 10px 30px -10px rgba(91, 108, 255, 0.35);
+  --shadow-pulse-glow: 0 0 20px rgba(91, 108, 255, 0.5);
+  --shadow-subtle: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
+  --shadow-apple: 0 12px 32px -4px rgba(0, 0, 0, 0.06);
+
+  --animate-ring-pulse: ringPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes ringPulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0px rgba(91, 108, 255, 0.6);
+  }
+
+  70% {
+    box-shadow: 0 0 0 25px rgba(91, 108, 255, 0);
+  }
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #F8FAFC;
+  color: #0F172A;
+  transition: background-color 0.25s ease, color 0.25s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html.dark body,
+body.dark {
+  background-color: #0B0F19;
+  color: #F8FAFC;
+}
+
+/* Global Text Selection Rule */
+*,
+*::selection {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}
+
+::selection,
+*::selection {
+  background-color: #312E81 !important;
+  color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+}
+
+::-moz-selection,
+*::-moz-selection {
+  background-color: #312E81 !important;
+  color: #FFFFFF !important;
+}
+
+/* Solid Brand Accent & Utility Classes */
+.pulse-gradient-bg {
+  background-color: #5B6CFF;
+}
+
+.pulse-gradient-text {
+  color: #5B6CFF;
+}
+
+/* Glassmorphism & Translucent Layers (Borderless) */
+.glass-header {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+html.dark .glass-header {
+  background: rgba(17, 24, 39, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* Custom Minimal Scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* Glass Call Action Bar (Borderless) */
+.call-glass-bar {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.animate-ring-pulse {
+  animation: ringPulse 2s infinite;
+}
+
+/* ── Landing Page: Scroll Reveal ─────────────────────────────────── */
+@keyframes lp-reveal {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes lp-reveal-scale {
+  from { opacity: 0; transform: scale(0.96) translateY(16px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.lp-reveal {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.lp-reveal.is-visible {
+  animation: lp-reveal 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+.lp-reveal-scale {
+  opacity: 0;
+  transform: scale(0.96) translateY(16px);
+}
+
+.lp-reveal-scale.is-visible {
+  animation: lp-reveal-scale 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+/* Stagger delays for children */
+.lp-stagger > .lp-reveal:nth-child(1) { animation-delay: 0ms; }
+.lp-stagger > .lp-reveal:nth-child(2) { animation-delay: 80ms; }
+.lp-stagger > .lp-reveal:nth-child(3) { animation-delay: 160ms; }
+.lp-stagger > .lp-reveal:nth-child(4) { animation-delay: 240ms; }
+.lp-stagger > .lp-reveal:nth-child(5) { animation-delay: 320ms; }
+.lp-stagger > .lp-reveal:nth-child(6) { animation-delay: 400ms; }
+
+/* ── Sexy 3D & Interactive Utility Enhancements ───────────────────── */
+@keyframes pc-gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes pc-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+@keyframes pc-float-slow {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(0.5deg); }
+}
+
+@keyframes pc-pulse-glow {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+.pc-gradient-text {
+  background: linear-gradient(135deg, #6366F1 0%, #38BDF8 50%, #34D399 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: pc-gradient-shift 8s ease infinite;
+}
+
+.pc-gradient-text-emerald {
+  background: linear-gradient(135deg, #34D399 0%, #10B981 50%, #06B6D4 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: pc-gradient-shift 8s ease infinite;
+}
+
+.pc-shimmer-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.pc-shimmer-btn::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+  transform: translateX(-100%);
+}
+
+.pc-shimmer-btn:hover::after {
+  animation: pc-shimmer 1.2s ease-in-out infinite;
+}
+
+.pc-card-3d {
+  transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.3s cubic-bezier(0.2, 0, 0, 1), border-color 0.3s ease;
+  transform-style: preserve-3d;
+}
+
+.pc-card-3d:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 20px 40px -15px rgba(99, 102, 241, 0.18);
+}
+
+html.dark .pc-card-3d:hover {
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5), 0 0 20px 1px rgba(99, 102, 241, 0.2);
+}
+
+.pc-glow-orb {
+  animation: pc-pulse-glow 6s ease-in-out infinite;
+}
+
+.pc-grid-bg {
+  background-image: radial-gradient(rgba(99, 102, 241, 0.12) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+html.dark .pc-grid-bg {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-reveal, .lp-reveal-scale, .pc-gradient-text, .pc-gradient-text-emerald, .pc-glow-orb {
+    opacity: 1;
+    transform: none;
+    animation: none !important;
+  }
+}
