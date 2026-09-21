@@ -36,7 +36,7 @@ const JoinCallSnackbar = ({ isOpen, onClose }) => {
 
     const cleanCode = roomCodeInput.toUpperCase().trim();
     joinRoomCall(cleanCode);
-    showToast(`Joined 1:M Video Room ${cleanCode}`, 'success');
+    showToast(`Joined Video Room ${cleanCode}`, 'success');
     onClose();
   };
 
@@ -69,21 +69,19 @@ const JoinCallSnackbar = ({ isOpen, onClose }) => {
       <div className="flex bg-slate-100 dark:bg-pulse-dark-bg p-1 rounded-2xl my-3 text-xs font-semibold">
         <button
           onClick={() => setActiveTab('username')}
-          className={`flex-1 py-1.5 rounded-xl transition-all ${
-            activeTab === 'username'
-              ? 'bg-white dark:bg-[#1E293B] text-pulse-blue dark:text-[#7C8BFF] shadow-sm font-bold'
-              : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
-          }`}
+          className={`flex-1 py-1.5 rounded-xl transition-all ${activeTab === 'username'
+            ? 'bg-white dark:bg-[#1E293B] text-pulse-blue dark:text-[#7C8BFF] shadow-sm font-bold'
+            : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+            }`}
         >
           Call @Username
         </button>
         <button
           onClick={() => setActiveTab('code')}
-          className={`flex-1 py-1.5 rounded-xl transition-all ${
-            activeTab === 'code'
-              ? 'bg-white dark:bg-[#1E293B] text-pulse-blue dark:text-[#7C8BFF] shadow-sm font-bold'
-              : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
-          }`}
+          className={`flex-1 py-1.5 rounded-xl transition-all ${activeTab === 'code'
+            ? 'bg-white dark:bg-[#1E293B] text-pulse-blue dark:text-[#7C8BFF] shadow-sm font-bold'
+            : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+            }`}
         >
           Join Code
         </button>
@@ -134,7 +132,7 @@ const JoinCallSnackbar = ({ isOpen, onClose }) => {
             disabled={!roomCodeInput.trim()}
             className="w-full bg-pulse-blue hover:bg-[#4B5CEE] disabled:opacity-50 text-white font-bold py-2.5 rounded-2xl text-xs shadow-md shadow-pulse-blue/20 active:scale-98 transition-all cursor-pointer flex items-center justify-center gap-1.5"
           >
-            Join 1:M Meeting Room
+            Join Meeting Room
           </button>
         </form>
       )}

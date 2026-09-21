@@ -10,6 +10,11 @@ import Button from '../components/ui/Button';
 import { Hash, Search, Check, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
+import {
+  playMessageNotificationSound,
+  showDesktopNotification,
+  requestNotificationPermission,
+} from '../utils/soundEffects';
 
 export default function HomePage() {
   const [channels, setChannels] = useState([]);
@@ -75,11 +80,35 @@ export default function HomePage() {
     fetchChannels();
   }, [token]);
 
+  // In HomePage component:
+  useEffect(() => {
+    requestNotificationPermission();
+  }, []);
+
   // Real-time lastMessage & channel list update via socket
   useEffect(() => {
     if (!socket) return;
 
     const handleLastMessageUpdate = ({ channelId, lastMessage }) => {
+      const senderId = lastMessage?.senderId?._id || lastMessage?.senderId;
+      const isFromMe = senderId === currentUser?._id;
+
+      if (!isFromMe && lastMessage?.messageType !== 'system_call') {
+        playMessageNotificationSound();
+
+        const senderName =
+          lastMessage?.senderId?.name ||
+          (lastMessage?.senderId?.username ? `@${lastMessage.senderId.username}` : 'PulseChat');
+        const previewText =
+          lastMessage?.messageType === 'image'
+            ? '📷 Sent an image'
+            : lastMessage?.content || 'Sent you a message';
+
+        showDesktopNotification(`Message from ${senderName}`, {
+          body: previewText,
+        });
+      }
+
       setChannels((prevChannels) => {
         const targetIndex = prevChannels.findIndex((c) => c._id === channelId);
         if (targetIndex === -1) {
@@ -109,7 +138,7 @@ export default function HomePage() {
       socket.off('channel:last_message', handleLastMessageUpdate);
       socket.off('channel:created', handleChannelCreated);
     };
-  }, [socket, token]);
+  }, [socket, token, currentUser]);
 
   // Live member search when creating group / broadcast
   useEffect(() => {

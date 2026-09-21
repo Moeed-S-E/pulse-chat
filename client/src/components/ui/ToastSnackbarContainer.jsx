@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { useToast } from '../../context/ToastContext';
-import { useCall } from '../../context/CallContext';
+import { CallContext } from '../../context/CallContext';
 import Avatar from './Avatar';
 
 const ToastSnackbarContainer = () => {
   const { toasts, removeToast } = useToast();
-  const { callState, callInfo, acceptCall, declineCall, endCall, setIsFullScreen } = useCall();
+  const callContext = useContext(CallContext);
+  const { callState, callInfo, acceptCall, declineCall, endCall, setIsFullScreen } = callContext || {};
 
   return (
     <div className="fixed top-4 right-4 z-50 flex flex-col gap-3 max-w-sm w-full pointer-events-none">
@@ -92,7 +93,7 @@ const ToastSnackbarContainer = () => {
                 <svg className="w-3.5 h-3.5 text-emerald-400 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
-                Incoming 1:M Video Call...
+                Incoming Video Call...
               </p>
             </div>
           </div>
@@ -125,13 +126,12 @@ const ToastSnackbarContainer = () => {
         return (
           <div
             key={toast.id}
-            className={`pointer-events-auto flex items-center justify-between gap-3 px-4 py-3 rounded-xl border text-xs font-medium shadow-xl backdrop-blur-md transition-all animate-fade-in ${
-              isSuccess
-                ? 'bg-emerald-950/90 border-emerald-500/40 text-emerald-200'
-                : isError
+            className={`pointer-events-auto flex items-center justify-between gap-3 px-4 py-3 rounded-xl border text-xs font-medium shadow-xl backdrop-blur-md transition-all animate-fade-in ${isSuccess
+              ? 'bg-emerald-950/90 border-emerald-500/40 text-emerald-200'
+              : isError
                 ? 'bg-rose-950/90 border-rose-500/40 text-rose-200'
                 : 'bg-slate-900/90 border-cyan-500/40 text-slate-200'
-            }`}
+              }`}
           >
             <div className="flex items-center gap-2.5">
               {isSuccess && (

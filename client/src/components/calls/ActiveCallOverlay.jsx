@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useCall } from '../../context/CallContext';
+import React, { useState, useEffect, useRef, useContext } from 'react';
+import { CallContext } from '../../context/CallContext';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
 import { useToast } from '../../context/ToastContext';
@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 
 // Individual Video Tile component for attached MediaStream
-const VideoTile = ({ stream, isLocal, name, username, isMuted, isCameraOff }) => {
+const VideoTile = ({ stream, isLocal, name, username, isMuted, isCameraOff, className = '' }) => {
   const videoRef = useRef(null);
 
   useEffect(() => {
@@ -30,14 +30,14 @@ const VideoTile = ({ stream, isLocal, name, username, isMuted, isCameraOff }) =>
       if (node.srcObject !== stream) {
         node.srcObject = stream;
       }
-      node.play?.().catch(() => {});
+      node.play?.().catch(() => { });
     }
   };
 
   const hasVideo = Boolean(stream && !isCameraOff);
 
   return (
-    <div className="relative bg-slate-900 rounded-3xl overflow-hidden border border-slate-800/80 w-full h-full min-h-[300px] aspect-video shadow-2xl flex items-center justify-center group">
+    <div className={`relative bg-slate-900 rounded-3xl overflow-hidden border border-slate-800/80 w-full h-full min-h-[180px] shadow-2xl flex items-center justify-center group ${className}`}>
       {hasVideo ? (
         <video
           ref={setVideoRef}
@@ -70,11 +70,12 @@ const VideoTile = ({ stream, isLocal, name, username, isMuted, isCameraOff }) =>
 };
 
 export default function ActiveCallOverlay() {
+  const callContext = useContext(CallContext);
   const {
     callState,
     callInfo,
     localStream,
-    remoteStreams,
+    remoteStreams = [],
     isMuted,
     isCameraOff,
     isFullScreen,
@@ -83,8 +84,7 @@ export default function ActiveCallOverlay() {
     endCall,
     toggleMic,
     toggleCamera,
-    start1toMCall,
-  } = useCall();
+  } = callContext || {};
 
   const { token } = useAuth();
   const { socket } = useSocket();
@@ -153,12 +153,31 @@ export default function ActiveCallOverlay() {
     showToast(`Invited @${u.username} to join room ${roomCode}!`, 'success');
   };
 
-  // Dynamic responsive grid styles based on participant count
-  const getGridColsClass = () => {
-    if (totalCount === 1) return 'grid-cols-1 max-w-2xl mx-auto';
-    if (totalCount === 2) return 'grid-cols-1 md:grid-cols-2';
-    if (totalCount <= 4) return 'grid-cols-2';
-    return 'grid-cols-2 md:grid-cols-3';
+  // Dynamic responsive grid container & tile spanning styles based on participant count (0 EMPTY SLOTS)
+  const getGridContainerClass = (count) => {
+    if (count === 1) return 'grid-cols-1 w-full h-full';
+    if (count === 2) return 'grid-cols-1 md:grid-cols-2 w-full h-full';
+    if (count === 3) return 'grid-cols-2 w-full h-full';
+    if (count === 4) return 'grid-cols-2 w-full h-full';
+    if (count === 5) return 'grid-cols-6 w-full h-full';
+    if (count === 6) return 'grid-cols-3 w-full h-full';
+    return 'grid-cols-2 md:grid-cols-3 w-full h-full';
+  };
+
+  const getTileSpanClass = (index, count) => {
+    if (count === 1) return 'col-span-1 w-full h-full';
+    if (count === 2) return 'col-span-1 w-full h-full';
+    if (count === 3) {
+      // 3 Users: Top 2 items take 1 col each. 3rd item spans 2 cols (full bottom row -> 0 EMPTY SLOTS!)
+      return index === 2 ? 'col-span-2 w-full h-full' : 'col-span-1 w-full h-full';
+    }
+    if (count === 4) return 'col-span-1 w-full h-full';
+    if (count === 5) {
+      // 5 Users: Top 2 take 3 cols each (50%), bottom 3 take 2 cols each (33.3% -> 0 EMPTY SLOTS!)
+      return index < 2 ? 'col-span-3 w-full h-full' : 'col-span-2 w-full h-full';
+    }
+    if (count === 6) return 'col-span-1 w-full h-full';
+    return 'col-span-1 w-full h-full';
   };
 
   /* ── 1. Floating Minimized Picture-in-Picture Bar (when !isFullScreen) ── */
@@ -179,9 +198,8 @@ export default function ActiveCallOverlay() {
             type="button"
             onClick={toggleMic}
             title={isMuted ? 'Unmute Mic' : 'Mute Mic'}
-            className={`p-2 rounded-xl text-xs transition-colors cursor-pointer ${
-              isMuted ? 'bg-rose-500/20 text-rose-400' : 'bg-slate-800 text-slate-300 hover:text-white'
-            }`}
+            className={`p-2 rounded-xl text-xs transition-colors cursor-pointer ${isMuted ? 'bg-rose-500/20 text-rose-400' : 'bg-slate-800 text-slate-300 hover:text-white'
+              }`}
           >
             {isMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
           </button>
@@ -190,9 +208,8 @@ export default function ActiveCallOverlay() {
             type="button"
             onClick={toggleCamera}
             title={isCameraOff ? 'Turn Camera On' : 'Turn Camera Off'}
-            className={`p-2 rounded-xl text-xs transition-colors cursor-pointer ${
-              isCameraOff ? 'bg-rose-500/20 text-rose-400' : 'bg-slate-800 text-slate-300 hover:text-white'
-            }`}
+            className={`p-2 rounded-xl text-xs transition-colors cursor-pointer ${isCameraOff ? 'bg-rose-500/20 text-rose-400' : 'bg-slate-800 text-slate-300 hover:text-white'
+              }`}
           >
             {isCameraOff ? <VideoOff className="w-4 h-4" /> : <Video className="w-4 h-4" />}
           </button>
@@ -296,7 +313,7 @@ export default function ActiveCallOverlay() {
           <div>
             <h3 className="font-bold text-slate-100 text-base flex items-center gap-2">
               {callInfo?.isRoomCall
-                ? `1:M Meeting Room (${callInfo.roomCode})`
+                ? `1: Meeting Room (${callInfo.roomCode})`
                 : `${isVoiceView ? 'Voice Call' : 'Video Call'} · ${calleeName}`}
             </h3>
             <p className="text-xs text-slate-400">
@@ -320,17 +337,15 @@ export default function ActiveCallOverlay() {
           <div className="flex bg-slate-900 border border-slate-800 p-1 rounded-xl text-xs font-semibold">
             <button
               onClick={() => setViewMode('voice')}
-              className={`px-3 py-1.5 rounded-lg transition-all ${
-                isVoiceView ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
-              }`}
+              className={`px-3 py-1.5 rounded-lg transition-all ${isVoiceView ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
+                }`}
             >
               Voice Screen
             </button>
             <button
               onClick={() => setViewMode('video')}
-              className={`px-3 py-1.5 rounded-lg transition-all ${
-                !isVoiceView ? 'bg-cyan-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
-              }`}
+              className={`px-3 py-1.5 rounded-lg transition-all ${!isVoiceView ? 'bg-cyan-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
+                }`}
             >
               Video Grid
             </button>
@@ -380,19 +395,21 @@ export default function ActiveCallOverlay() {
             </p>
           </div>
         ) : (
-          /* 1:M RESPONSIVE VIDEO GRID */
-          <div className={`grid gap-4 w-full h-full max-h-[75vh] ${getGridColsClass()}`}>
+          /* 1:M RESPONSIVE DYNAMIC VIDEO GRID (0 EMPTY SLOTS) */
+          <div className={`grid gap-4 w-full h-full min-h-0 ${getGridContainerClass(totalCount)}`}>
             {/* Local Stream Tile */}
             <VideoTile
               stream={localStream}
               isLocal={true}
               name="You"
+              username={user?.username}
               isMuted={isMuted}
               isCameraOff={isCameraOff}
+              className={getTileSpanClass(0, totalCount)}
             />
 
             {/* Remote Participants Stream Tiles */}
-            {remoteStreams.map((peer) => (
+            {remoteStreams.map((peer, idx) => (
               <VideoTile
                 key={peer.peerId}
                 stream={peer.stream}
@@ -401,12 +418,13 @@ export default function ActiveCallOverlay() {
                 username={peer.username}
                 isMuted={false}
                 isCameraOff={false}
+                className={getTileSpanClass(idx + 1, totalCount)}
               />
             ))}
 
             {/* Waiting for peers message if only local stream in room */}
             {remoteStreams.length === 0 && callInfo?.isRoomCall && (
-              <div className="bg-slate-900/40 rounded-2xl border border-dashed border-slate-800 flex flex-col items-center justify-center p-6 text-center">
+              <div className="bg-slate-900/40 rounded-3xl border border-dashed border-slate-800 flex flex-col items-center justify-center p-6 text-center w-full h-full">
                 <Users className="w-10 h-10 text-cyan-400/60 mb-2 animate-bounce" />
                 <p className="text-sm font-semibold text-slate-300">Waiting for participants to join...</p>
                 <p className="text-xs text-slate-500 mt-1">Share code <span className="font-mono text-cyan-400">{callInfo.roomCode}</span> to invite others.</p>
@@ -421,11 +439,10 @@ export default function ActiveCallOverlay() {
         {/* Toggle Mic */}
         <button
           onClick={toggleMic}
-          className={`p-3.5 rounded-2xl transition-all cursor-pointer shadow-lg ${
-            isMuted
-              ? 'bg-rose-600/90 text-white shadow-rose-600/30'
-              : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
-          }`}
+          className={`p-3.5 rounded-2xl transition-all cursor-pointer shadow-lg ${isMuted
+            ? 'bg-rose-600/90 text-white shadow-rose-600/30'
+            : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
+            }`}
           title={isMuted ? 'Unmute Microphone' : 'Mute Microphone'}
         >
           {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
@@ -437,11 +454,10 @@ export default function ActiveCallOverlay() {
             toggleCamera();
             if (isCameraOff) setViewMode('video');
           }}
-          className={`p-3.5 rounded-2xl transition-all cursor-pointer shadow-lg ${
-            isCameraOff
-              ? 'bg-rose-600/90 text-white shadow-rose-600/30'
-              : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
-          }`}
+          className={`p-3.5 rounded-2xl transition-all cursor-pointer shadow-lg ${isCameraOff
+            ? 'bg-rose-600/90 text-white shadow-rose-600/30'
+            : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
+            }`}
           title={isCameraOff ? 'Turn Camera On' : 'Turn Camera Off'}
         >
           {isCameraOff ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}

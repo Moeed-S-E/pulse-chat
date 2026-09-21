@@ -2,8 +2,18 @@ import React, { createContext, useContext, useState, useEffect, useRef } from 'r
 import { useSocket } from './SocketContext';
 import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
+import {
+  playIncomingRingtone,
+  stopIncomingRingtone,
+  playOutgoingRingback,
+  stopOutgoingRingback,
+  playCallConnectedSound,
+  playCallEndedSound,
+  showDesktopNotification,
+  requestNotificationPermission,
+} from '../utils/soundEffects';
 
-const CallContext = createContext(null);
+export const CallContext = createContext(null);
 
 const STUN_SERVERS = {
   iceServers: [
@@ -43,6 +53,28 @@ export const CallProvider = ({ children }) => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Sound effects and ringtone controller based on call state
+  useEffect(() => {
+    requestNotificationPermission();
+
+    if (callState === 'incoming') {
+      playIncomingRingtone();
+    } else if (callState === 'outgoing') {
+      playOutgoingRingback();
+    } else if (callState === 'active') {
+      stopIncomingRingtone();
+      stopOutgoingRingback();
+      playCallConnectedSound();
+    } else if (callState === 'ended') {
+      stopIncomingRingtone();
+      stopOutgoingRingback();
+      playCallEndedSound();
+    } else if (callState === 'idle') {
+      stopIncomingRingtone();
+      stopOutgoingRingback();
+    }
+  }, [callState]);
+
   // Timer effect for active call
   useEffect(() => {
     if (callState === 'active') {
@@ -61,6 +93,8 @@ export const CallProvider = ({ children }) => {
 
   // Clean up all streams and multi-peer connections
   const cleanupCall = () => {
+    stopIncomingRingtone();
+    stopOutgoingRingback();
     if (ringingTimeoutRef.current) clearTimeout(ringingTimeoutRef.current);
 
     peerConnectionsRef.current.forEach((pc) => {
@@ -161,9 +195,12 @@ export const CallProvider = ({ children }) => {
 
     // Incoming 1:1 call invite -> Snackbar will trigger
     const handleIncomingCall = ({ callerUserId, callerInfo, channelId }) => {
-      console.log('[Call] Incoming 1:M call from:', callerInfo);
+      console.log('[Call] Incoming call from:', callerInfo);
       setCallInfo({ targetUserId: callerUserId, callerInfo, channelId });
       setCallState('incoming');
+      showDesktopNotification('Incoming Video Call', {
+        body: `Incoming call from @${callerInfo?.username || 'User'}`,
+      });
     };
 
     // Caller receives acceptance -> send offer
@@ -437,6 +474,7 @@ export const CallProvider = ({ children }) => {
 
   // Accept incoming call
   const acceptCall = async () => {
+    stopIncomingRingtone();
     if (!socket || !callInfo) return;
     try {
       setIsFullScreen(true);
@@ -454,6 +492,7 @@ export const CallProvider = ({ children }) => {
 
   // Decline incoming call from Snackbar
   const declineCall = () => {
+    stopIncomingRingtone();
     if (!socket || !callInfo) return;
     socket.emit('call:decline', {
       callerUserId: callInfo.targetUserId,
