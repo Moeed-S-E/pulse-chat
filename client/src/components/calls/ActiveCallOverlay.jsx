@@ -26,12 +26,15 @@ const VideoTile = ({ stream, isLocal, name, username, isMuted, isCameraOff }) =>
 
   const setVideoRef = (node) => {
     videoRef.current = node;
-    if (node && stream && node.srcObject !== stream) {
-      node.srcObject = stream;
+    if (node && stream) {
+      if (node.srcObject !== stream) {
+        node.srcObject = stream;
+      }
+      node.play?.().catch(() => {});
     }
   };
 
-  const hasVideo = stream && !isCameraOff;
+  const hasVideo = Boolean(stream && !isCameraOff);
 
   return (
     <div className="relative bg-slate-900 rounded-3xl overflow-hidden border border-slate-800/80 w-full h-full min-h-[300px] aspect-video shadow-2xl flex items-center justify-center group">
@@ -95,15 +98,6 @@ export default function ActiveCallOverlay() {
   const [invitedUserIds, setInvitedUserIds] = useState(new Set());
   const [copiedCode, setCopiedCode] = useState(false);
 
-  if (callState !== 'active') return null;
-
-  const isAudioCall = callInfo?.callType === 'audio' || isCameraOff;
-  const isVoiceView = viewMode === 'voice' || (viewMode === 'auto' && isAudioCall);
-  const totalCount = 1 + (remoteStreams?.length || 0);
-  const mainPeer = remoteStreams[0];
-  const calleeName = callInfo?.calleeInfo?.name || mainPeer?.username || 'Peer';
-  const calleeUsername = callInfo?.calleeInfo?.username || mainPeer?.username;
-
   // Search users for invite modal
   useEffect(() => {
     if (!isInviteModalOpen) return;
@@ -126,6 +120,15 @@ export default function ActiveCallOverlay() {
     const t = setTimeout(search, 250);
     return () => clearTimeout(t);
   }, [inviteQuery, isInviteModalOpen, token]);
+
+  if (callState !== 'active') return null;
+
+  const isAudioCall = callInfo?.callType === 'audio' || isCameraOff;
+  const isVoiceView = viewMode === 'voice' || (viewMode === 'auto' && isAudioCall);
+  const totalCount = 1 + (remoteStreams?.length || 0);
+  const mainPeer = remoteStreams[0];
+  const calleeName = callInfo?.calleeInfo?.name || mainPeer?.username || 'Peer';
+  const calleeUsername = callInfo?.calleeInfo?.username || mainPeer?.username;
 
   const handleCopyCode = () => {
     const code = callInfo?.roomCode || 'PULSE-8821';

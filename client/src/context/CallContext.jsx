@@ -365,6 +365,7 @@ export const CallProvider = ({ children }) => {
 
     const isAudioOnly = callType === 'audio';
     setIsCameraOff(isAudioOnly);
+    setIsFullScreen(true);
 
     setCallInfo({
       targetUserId,
@@ -422,6 +423,7 @@ export const CallProvider = ({ children }) => {
     if (!socket || !code) return;
     const cleanCode = code.toUpperCase().trim();
 
+    setIsFullScreen(true);
     setCallInfo({
       isRoomCall: true,
       roomCode: cleanCode,
@@ -437,6 +439,7 @@ export const CallProvider = ({ children }) => {
   const acceptCall = async () => {
     if (!socket || !callInfo) return;
     try {
+      setIsFullScreen(true);
       setCallState('active');
       await getMedia(callInfo.callType === 'audio');
       socket.emit('call:accept', {

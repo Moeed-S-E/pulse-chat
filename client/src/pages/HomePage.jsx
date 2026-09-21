@@ -207,16 +207,17 @@ export default function HomePage() {
 
   return (
     <div className="flex h-screen bg-[#F7F8FA] dark:bg-pulse-dark-bg overflow-hidden relative">
-      {/* Sidebar / CallsView List Column (Mobile List View or Desktop Left Column) */}
+      {/* Sidebar List Column (Mobile List View or Desktop Left Column) */}
       <div className={`w-full md:w-80 lg:w-96 h-full shrink-0 ${mobileShowChat ? 'hidden md:flex' : 'flex'}`}>
-        {activeView === 'calls' ? (
+        <div className={`w-full h-full ${activeView === 'calls' ? 'flex md:hidden' : 'hidden'}`}>
           <CallsView
             channels={channels}
             activeView={activeView}
             onSelectView={handleSelectView}
             onOpenJoinCall={() => setIsJoinCallOpen(true)}
           />
-        ) : (
+        </div>
+        <div className={`w-full h-full ${activeView === 'calls' ? 'hidden md:flex' : 'flex'}`}>
           <Sidebar
             channels={channels}
             selectedChannel={selectedChannel}
@@ -228,10 +229,10 @@ export default function HomePage() {
             onOpenJoinCall={() => setIsJoinCallOpen(true)}
             loading={loading}
           />
-        )}
+        </div>
       </div>
 
-      {/* Main View Area: ChatView on Desktop or when mobileShowChat is true */}
+      {/* Main View Area: ChatView on Desktop or CallsView when activeView === 'calls' */}
       <div className={`w-full flex-1 h-full min-w-0 ${mobileShowChat ? 'flex' : 'hidden md:flex'}`}>
         {activeView === 'calls' ? (
           <CallsView
@@ -356,8 +357,8 @@ export default function HomePage() {
                       </div>
                       <div
                         className={`w-5 h-5 rounded-full flex items-center justify-center border ${isSelected
-                            ? 'bg-pulse-blue border-pulse-blue text-white'
-                            : 'border-slate-700 text-transparent'
+                          ? 'bg-pulse-blue border-pulse-blue text-white'
+                          : 'border-slate-700 text-transparent'
                           }`}
                       >
                         <Check className="w-3.5 h-3.5" />

@@ -2,6 +2,8 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Message = require('../models/Message');
 const Channel = require('../models/Channel');
+const CallLog = require('../models/CallLog');
+const logger = require('../utils/logger');
 
 const activeSockets = new Map(); // userId -> Set of socketIds
 
@@ -133,10 +135,11 @@ const setupSocketHandler = (io) => {
 
     // Outgoing call invite from caller -> callee
     socket.on('call:invite', async ({ targetUserId, channelId, callerInfo }) => {
-      console.log(`[Call] Invite from ${socket.username} (${userId}) to target ${targetUserId}`);
+      logger.info(`[Call:WebSocket] Invite sent from ${socket.username} (${userId}) to target ${targetUserId}`);
 
       const targetRoom = io.sockets.adapter.rooms.get(`user:${targetUserId}`);
       if (!targetRoom || targetRoom.size === 0) {
+        logger.info(`[Call:WebSocket] Target user ${targetUserId} is offline`);
         socket.emit('call:declined', {
           declinerUserId: targetUserId,
           channelId,
@@ -154,7 +157,7 @@ const setupSocketHandler = (io) => {
 
     // Callee accepts call
     socket.on('call:accept', ({ callerUserId, channelId }) => {
-      console.log(`[Call] Accepted by ${socket.username} for caller ${callerUserId}`);
+      logger.info(`[Call:WebSocket] Accepted by ${socket.username} for caller ${callerUserId}`);
       io.to(`user:${callerUserId}`).emit('call:accepted', {
         acceptorUserId: userId,
         channelId,
@@ -162,8 +165,22 @@ const setupSocketHandler = (io) => {
     });
 
     // Callee declines call
-    socket.on('call:decline', ({ callerUserId, channelId, reason }) => {
-      console.log(`[Call] Declined by ${socket.username} for caller ${callerUserId}`);
+    socket.on('call:decline', async ({ callerUserId, channelId, reason }) => {
+      logger.info(`[Call] Declined by ${socket.username} for caller ${callerUserId}`);
+
+      try {
+        await CallLog.create({
+          callerId: callerUserId,
+          receiverId: userId,
+          channelId: channelId || null,
+          callType: 'video',
+          status: 'declined',
+          duration: '00:00',
+        });
+      } catch (err) {
+        logger.error('Error logging declined call log to DB:', err);
+      }
+
       io.to(`user:${callerUserId}`).emit('call:declined', {
         declinerUserId: userId,
         channelId,
@@ -195,9 +212,22 @@ const setupSocketHandler = (io) => {
       });
     });
 
-    // End Call & log system call message
+    // End Call & log system call message & DB CallLog
     socket.on('call:end', async ({ targetUserId, channelId, duration }) => {
-      console.log(`[Call] Ended by ${socket.username} in channel ${channelId}, duration: ${duration}`);
+      logger.info(`[Call] Ended by ${socket.username} in channel ${channelId}, duration: ${duration}`);
+
+      try {
+        await CallLog.create({
+          callerId: userId,
+          receiverId: targetUserId || null,
+          channelId: channelId || null,
+          callType: 'video',
+          status: 'completed',
+          duration: duration || '00:00',
+        });
+      } catch (err) {
+        logger.error('Error saving CallLog to DB:', err);
+      }
 
       if (targetUserId) {
         io.to(`user:${targetUserId}`).emit('call:ended', {
@@ -225,7 +255,7 @@ const setupSocketHandler = (io) => {
           io.to(`channel:${channelId}`).emit('message:new', callMsg);
           io.emit('channel:last_message', { channelId, lastMessage: callMsg });
         } catch (err) {
-          console.error('Error logging system call message:', err);
+          logger.error('Error logging system call message:', err);
         }
       }
     });

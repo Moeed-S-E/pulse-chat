@@ -12,8 +12,12 @@ import {
   Plus,
   MessageSquare,
   Settings,
+  Copy,
+  Check,
 } from 'lucide-react';
 import Avatar from '../ui/Avatar';
+import Modal from '../ui/Modal';
+import Button from '../ui/Button';
 import { useAuth } from '../../context/AuthContext';
 import { useCall } from '../../context/CallContext';
 import { useSocket } from '../../context/SocketContext';
@@ -25,13 +29,53 @@ export default function CallsView({
   onOpenJoinCall,
 }) {
   const [searchQuery, setSearchQuery] = useState('');
-  const { user } = useAuth();
+  const [createdCallLink, setCreatedCallLink] = useState(null); // { code, fullUrl }
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [dbCallLogs, setDbCallLogs] = useState([]);
+
+  const { user, token } = useAuth();
   const { startCall, joinRoomCall } = useCall();
   const { onlineUsers } = useSocket();
   const navigate = useNavigate();
 
-  // Extract all call logs from channel messages
+  // Fetch backend call logs from /api/calls
+  React.useEffect(() => {
+    if (!token) return;
+    fetch('/api/calls', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.calls) {
+          setDbCallLogs(data.calls);
+        }
+      })
+      .catch((err) => console.error('Error fetching DB call logs:', err));
+  }, [token]);
+
+  // Extract all call logs from backend DB and channel messages
   const recentCalls = [];
+  const logIds = new Set();
+
+  dbCallLogs.forEach((log) => {
+    const isCaller = log.callerId?._id === user?._id || log.callerId === user?._id;
+    const otherMember = isCaller ? log.receiverId : log.callerId;
+    logIds.add(log._id);
+    recentCalls.push({
+      id: log._id,
+      channel: log.channelId,
+      otherMember,
+      isDM: Boolean(otherMember),
+      name: otherMember?.name || (log.roomCode ? `Meeting: ${log.roomCode}` : 'Call Log'),
+      avatarInitial: otherMember?.avatarInitial,
+      avatarColor: otherMember?.avatarColor,
+      isOutgoing: isCaller,
+      duration: log.duration || '00:00',
+      timestamp: log.createdAt || log.startedAt,
+      status: log.status,
+    });
+  });
+
   channels.forEach((c) => {
     const isDM = c.isDM;
     const otherMember = isDM
@@ -39,22 +83,25 @@ export default function CallsView({
       : null;
 
     if (c.lastMessage && c.lastMessage.messageType === 'system_call') {
-      const isOutgoing =
-        c.lastMessage.senderId?._id === user?._id ||
-        c.lastMessage.senderId === user?._id;
+      const msgId = c.lastMessage._id || c._id;
+      if (!logIds.has(msgId)) {
+        const isOutgoing =
+          c.lastMessage.senderId?._id === user?._id ||
+          c.lastMessage.senderId === user?._id;
 
-      recentCalls.push({
-        id: c.lastMessage._id || c._id,
-        channel: c,
-        otherMember,
-        isDM,
-        name: isDM ? otherMember?.name || 'User' : `#${c.name}`,
-        avatarInitial: otherMember?.avatarInitial,
-        avatarColor: otherMember?.avatarColor,
-        isOutgoing,
-        duration: c.lastMessage.callDuration || '00:00',
-        timestamp: c.lastMessage.createdAt || c.updatedAt,
-      });
+        recentCalls.push({
+          id: msgId,
+          channel: c,
+          otherMember,
+          isDM,
+          name: isDM ? otherMember?.name || 'User' : `#${c.name}`,
+          avatarInitial: otherMember?.avatarInitial,
+          avatarColor: otherMember?.avatarColor,
+          isOutgoing,
+          duration: c.lastMessage.callDuration || '00:00',
+          timestamp: c.lastMessage.createdAt || c.updatedAt,
+        });
+      }
     }
   });
 
@@ -81,14 +128,66 @@ export default function CallsView({
   );
 
   const handleCreateCallLink = () => {
-    const randomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-    joinRoomCall(randomCode);
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const fullUrl = `${window.location.origin}/app?call=${code}`;
+    setCreatedCallLink({ code, fullUrl });
+    setCopiedLink(false);
   };
 
   return (
     <div className="flex-1 flex flex-col h-full bg-[#F8FAFC] dark:bg-pulse-dark-bg transition-colors select-none overflow-hidden relative">
+      {/* Created Call Link Modal */}
+      <Modal
+        isOpen={Boolean(createdCallLink)}
+        onClose={() => setCreatedCallLink(null)}
+        title="Call Link Created"
+        subtitle="Anyone with PulseChat can use this room code or link to join your encrypted meeting."
+      >
+        <div className="space-y-4">
+          <div className="p-4 bg-slate-100 dark:bg-slate-900 rounded-2xl    -slate-200 dark: -slate-800 space-y-2 text-center">
+            <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              Meeting Room Code
+            </div>
+            <div className="text-2xl font-mono font-black text-pulse-blue tracking-wide">
+              {createdCallLink?.code}
+            </div>
+            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 truncate px-2">
+              {createdCallLink?.fullUrl}
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2 pt-2">
+            <Button
+              onClick={() => {
+                navigator.clipboard?.writeText(createdCallLink?.fullUrl || '');
+                setCopiedLink(true);
+                setTimeout(() => setCopiedLink(false), 2000);
+              }}
+              variant="secondary"
+              className="flex-1 rounded-2xl py-2.5"
+            >
+              {copiedLink ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+              <span>{copiedLink ? 'Link Copied!' : 'Copy Link'}</span>
+            </Button>
+
+            <Button
+              onClick={() => {
+                const code = createdCallLink?.code;
+                setCreatedCallLink(null);
+                if (code) joinRoomCall(code);
+              }}
+              variant="primary"
+              className="flex-1 rounded-2xl py-2.5"
+            >
+              <Video className="w-4 h-4" />
+              <span>Start Call Now</span>
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
       {/* 1. Header (Clean & Un-cramped) */}
-      <div className="p-4 sm:p-5 bg-white dark:bg-pulse-panel-bg border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between shadow-xs shrink-0">
+      <div className="p-4 sm:p-5 bg-white dark:bg-pulse-panel-bg  -b  -slate-200/80 dark: -slate-800 flex items-center justify-between shadow-xs shrink-0">
         <div>
           <h1 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
             Calls & Meetings
@@ -102,7 +201,7 @@ export default function CallsView({
           <button
             onClick={onOpenJoinCall}
             title="Join with Room Code"
-            className="w-9 h-9 sm:w-auto sm:px-3 sm:py-2 rounded-2xl bg-indigo-50 dark:bg-indigo-950/80 hover:bg-indigo-100 dark:hover:bg-indigo-900/90 text-pulse-blue font-bold text-xs flex items-center justify-center space-x-1.5 transition-all border border-indigo-200/50 dark:border-indigo-800/50 cursor-pointer"
+            className="w-9 h-9 sm:w-auto sm:px-3 sm:py-2 rounded-2xl bg-indigo-50 dark:bg-indigo-950/80 hover:bg-indigo-100 dark:hover:bg-indigo-900/90 text-pulse-blue font-bold text-xs flex items-center justify-center space-x-1.5 transition-all    -indigo-200/50 dark: -indigo-800/50 cursor-pointer"
           >
             <KeyRound className="w-4 h-4" />
             <span className="hidden sm:inline">Join Code</span>
@@ -128,14 +227,14 @@ export default function CallsView({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search recent calls or contacts..."
-            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-pulse-panel-bg border border-slate-200/80 dark:border-slate-800 rounded-2xl text-xs font-semibold text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-pulse-blue shadow-xs transition-all"
+            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-pulse-panel-bg    -slate-200/80 dark: -slate-800 rounded-2xl text-xs font-semibold text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus: -pulse-blue shadow-xs transition-all"
           />
         </div>
 
         {/* "Create a Call Link" Banner (WhatsApp Style) */}
         <div
           onClick={handleCreateCallLink}
-          className="p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl bg-white dark:bg-pulse-panel-bg border border-slate-200/80 dark:border-slate-800 flex items-center space-x-3.5 cursor-pointer hover:border-pulse-blue/50 transition-all shadow-xs group"
+          className="p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl bg-white dark:bg-pulse-panel-bg    -slate-200/80 dark: -slate-800 flex items-center space-x-3.5 cursor-pointer hover: -pulse-blue/50 transition-all shadow-xs group"
         >
           <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl pulse-gradient-bg flex items-center justify-center text-white shadow-md shadow-pulse-blue/30 shrink-0 group-hover:scale-105 transition-transform">
             <Link className="w-5.5 h-5.5" />
@@ -157,11 +256,11 @@ export default function CallsView({
           </h2>
 
           {filteredCalls.length === 0 ? (
-            <div className="p-6 text-center rounded-2xl sm:rounded-3xl bg-white dark:bg-pulse-panel-bg border border-slate-200/80 dark:border-slate-800 text-slate-400 text-xs font-medium">
+            <div className="p-6 text-center rounded-2xl sm:rounded-3xl bg-white dark:bg-pulse-panel-bg    -slate-200/80 dark: -slate-800 text-slate-400 text-xs font-medium">
               No recent call history found. Start a call with a contact below!
             </div>
           ) : (
-            <div className="bg-white dark:bg-pulse-panel-bg rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800/60 shadow-xs overflow-hidden">
+            <div className="bg-white dark:bg-pulse-panel-bg rounded-2xl sm:rounded-3xl    -slate-200/80 dark: -slate-800 divide-y divide-slate-100 dark:divide-slate-800/60 shadow-xs overflow-hidden">
               {filteredCalls.map((call) => {
                 const isOnline = call.otherMember
                   ? call.otherMember.isOnline || onlineUsers.has(call.otherMember._id)
@@ -230,7 +329,7 @@ export default function CallsView({
                               )
                             }
                             title="Video Call"
-                            className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/80 hover:bg-indigo-100 text-pulse-blue flex items-center justify-center transition-colors cursor-pointer border border-indigo-200/40 dark:border-indigo-800/40"
+                            className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/80 hover:bg-indigo-100 text-pulse-blue flex items-center justify-center transition-colors cursor-pointer    -indigo-200/40 dark: -indigo-800/40"
                           >
                             <Video className="w-4 h-4" />
                           </button>
@@ -250,7 +349,7 @@ export default function CallsView({
             Start a Call with Contacts
           </h2>
 
-          <div className="bg-white dark:bg-pulse-panel-bg rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800/60 shadow-xs overflow-hidden">
+          <div className="bg-white dark:bg-pulse-panel-bg rounded-2xl sm:rounded-3xl    -slate-200/80 dark: -slate-800 divide-y divide-slate-100 dark:divide-slate-800/60 shadow-xs overflow-hidden">
             {filteredContacts.length === 0 ? (
               <div className="p-6 text-center text-xs font-medium text-slate-400">
                 No direct message contacts available. Use Connect @username to start messaging!
@@ -293,7 +392,7 @@ export default function CallsView({
                       <button
                         onClick={() => startCall(userObj._id, channelId, userObj, 'video')}
                         title="Video Call"
-                        className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/80 hover:bg-indigo-100 text-pulse-blue flex items-center justify-center transition-colors cursor-pointer border border-indigo-200/40 dark:border-indigo-800/40"
+                        className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/80 hover:bg-indigo-100 text-pulse-blue flex items-center justify-center transition-colors cursor-pointer    -indigo-200/40 dark: -indigo-800/40"
                       >
                         <Video className="w-4 h-4" />
                       </button>
@@ -306,22 +405,16 @@ export default function CallsView({
         </div>
 
         {/* Security Footer */}
-        <div className="flex justify-center py-2">
-          <div className="px-4 py-2 rounded-full bg-indigo-50/80 dark:bg-indigo-950/60 border border-indigo-200/40 dark:border-indigo-800/40 text-[11px] font-semibold text-indigo-700 dark:text-indigo-300 flex items-center space-x-2">
-            <ShieldCheck className="w-4 h-4 text-indigo-500 shrink-0" />
-            <span>End-to-end WebCrypto encrypted</span>
-          </div>
-        </div>
       </div>
 
       {/* 3. Mobile WhatsApp-Style Bottom Navigation Bar (< md) ALWAYS VISIBLE */}
-      <div className="flex md:hidden items-center justify-around py-2 px-3 bg-slate-50 dark:bg-[#0B0F19] border-t border-slate-200/80 dark:border-slate-800 shrink-0 z-20">
+      <div className="flex md:hidden items-center justify-around py-2 px-3 bg-slate-50 dark:bg-[#0B0F19]  -t  -slate-200/80 dark: -slate-800 shrink-0 z-20">
         {/* Chats Tab */}
         <button
           onClick={() => onSelectView && onSelectView('chats')}
           className={`flex flex-col items-center space-y-0.5 py-1 px-4 rounded-2xl transition-all cursor-pointer ${activeView === 'chats'
-              ? 'bg-indigo-50 dark:bg-indigo-950/80 text-pulse-blue font-bold'
-              : 'text-slate-500 dark:text-slate-400'
+            ? 'bg-indigo-50 dark:bg-indigo-950/80 text-pulse-blue font-bold'
+            : 'text-slate-500 dark:text-slate-400'
             }`}
         >
           <MessageSquare className="w-5 h-5" />
@@ -332,8 +425,8 @@ export default function CallsView({
         <button
           onClick={() => onSelectView && onSelectView('calls')}
           className={`flex flex-col items-center space-y-0.5 py-1 px-4 rounded-2xl transition-all cursor-pointer ${activeView === 'calls'
-              ? 'bg-indigo-50 dark:bg-indigo-950/80 text-pulse-blue font-bold'
-              : 'text-slate-500 dark:text-slate-400'
+            ? 'bg-indigo-50 dark:bg-indigo-950/80 text-pulse-blue font-bold'
+            : 'text-slate-500 dark:text-slate-400'
             }`}
         >
           <Phone className="w-5 h-5" />
