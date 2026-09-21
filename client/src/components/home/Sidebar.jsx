@@ -52,7 +52,7 @@ export default function Sidebar({
             <h1 className="text-base font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
               PulseChat
             </h1>
-            <p className="text-[11px] font-semibold text-[#1E8E3E]">
+            <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
               Active Session
             </p>
           </div>
@@ -63,7 +63,7 @@ export default function Sidebar({
           <button
             onClick={onOpenConnect}
             title="Connect @username"
-            className="w-9 h-9 rounded-full bg-indigo-50 dark:bg-indigo-950/60  hover:bg-indigo-100 dark:hover:bg-indigo-900/80 text-indigo-600 dark:text-indigo-400 flex items-center justify-center transition-colors cursor-pointer"
+            className="w-9 h-9 rounded-full bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/80 text-indigo-600 dark:text-indigo-400 flex items-center justify-center transition-colors cursor-pointer"
           >
             <UserPlus className="w-4 h-4" />
           </button>
@@ -178,7 +178,7 @@ export default function Sidebar({
           </div>
           <div className="min-w-0">
             <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate group-hover:text-pulse-blue transition-colors">{user?.name}</h4>
-            <p className="text-[10px] font-semibold text-pulse-blue truncate">Edit Profile (@{user?.username})</p>
+            <p className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 truncate">Edit Profile (@{user?.username})</p>
           </div>
         </div>
 
@@ -192,16 +192,7 @@ export default function Sidebar({
           >
             <Settings className="w-4 h-4" />
           </button>
-          <button
-            onClick={() => {
-              logout();
-              navigate('/login');
-            }}
-            title="Log Out"
-            className="w-8 h-8 rounded-full hover:bg-red-100 dark:hover:bg-red-950/60 text-red-600 dark:text-red-400 flex items-center justify-center transition-colors cursor-pointer"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
+
         </div>
       </div>
     </div>

@@ -53,7 +53,7 @@ export default function ChannelItem({
       className={`p-3 rounded-2xl cursor-pointer transition-all flex items-center space-x-3 ${
         isSelected
           ? 'bg-indigo-50/90 dark:bg-indigo-950/80 shadow-sm'
-          : 'hover:bg-slate-100/70 dark:hover:bg-slate-800/50'
+          : 'hover:bg-slate-100/70 dark:hover:bg-slate-800/60'
       }`}
     >
       {/* Icon / Avatar */}
@@ -78,7 +78,7 @@ export default function ChannelItem({
             <span>{isDM ? other?.name || 'User' : `#${channel.name}`}</span>
           </h4>
           {channel.lastMessage && (
-            <span className="text-[10px] font-medium text-slate-400 shrink-0 ml-1">
+            <span className="text-[10px] font-medium text-slate-400 dark:text-slate-400 shrink-0 ml-1">
               {new Date(channel.lastMessage.createdAt).toLocaleTimeString([], {
                 hour: '2-digit',
                 minute: '2-digit',
@@ -86,7 +86,7 @@ export default function ChannelItem({
             </span>
           )}
         </div>
-        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 truncate mt-0.5">
+        <p className="text-xs font-medium text-slate-500 dark:text-slate-300 truncate mt-0.5">
           {channel.lastMessage
             ? `${senderName ? `${senderName}: ` : ''}${lastMsgPreview}`
             : isDM

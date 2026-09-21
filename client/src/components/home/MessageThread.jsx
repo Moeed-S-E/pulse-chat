@@ -36,12 +36,12 @@ function MessageItem({ msg, currentUser, isDM, onStartVideoCall, setActiveLightb
   if (isSystemCall) {
     return (
       <div className="flex justify-center my-3">
-        <div className="px-4 py-2 rounded-2xl bg-white dark:bg-[#1E293B] border border-slate-200/80 dark:border-slate-700 shadow-sm flex items-center space-x-2 text-xs font-bold text-slate-700 dark:text-slate-200">
-          <Video className="w-4 h-4 text-[#5B6CFF]" />
+        <div className="px-4 py-2 rounded-2xl bg-white dark:bg-[#1E293B] border border-slate-200/80 dark:border-slate-700/80 shadow-sm flex items-center space-x-2 text-xs font-bold text-slate-700 dark:text-slate-200">
+          <Video className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
           <span>{decryptedText}</span>
           <button
             onClick={onStartVideoCall}
-            className="ml-2 text-[#5B6CFF] hover:underline font-extrabold cursor-pointer"
+            className="ml-2 text-indigo-600 dark:text-indigo-400 hover:underline font-extrabold cursor-pointer"
           >
             Call back
           </button>
@@ -60,11 +60,11 @@ function MessageItem({ msg, currentUser, isDM, onStartVideoCall, setActiveLightb
       <div
         className={`max-w-md p-3 rounded-2xl text-sm leading-relaxed shadow-sm select-text cursor-text ${isMe
             ? 'pulse-gradient-bg text-white rounded-br-none'
-            : 'bg-[#EFF0F3] dark:bg-[#1E293B] text-slate-900 dark:text-slate-100 border border-slate-200/60 dark:border-slate-800 rounded-bl-none font-medium'
+            : 'bg-[#EFF0F3] dark:bg-[#1E293B] text-slate-900 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 rounded-bl-none font-medium'
           }`}
       >
         {!isMe && !isDM && (
-          <div className="text-[10px] font-bold text-[#5B6CFF] mb-1.5 px-1 select-text">
+          <div className="text-xs font-extrabold text-indigo-600 dark:text-indigo-400 mb-1.5 px-1 select-text">
             {msg.senderId?.name || 'User'}
           </div>
         )}
@@ -150,8 +150,8 @@ export default function MessageThread({
 
       {/* End-to-End Encryption Security Banner */}
       <div className="flex justify-center my-2">
-        <div className="px-3.5 py-1.5 rounded-full bg-indigo-50/80 dark:bg-indigo-950/40 text-[11px] font-semibold text-indigo-700 dark:text-indigo-300 flex items-center space-x-1.5 shadow-xs">
-          <Lock className="w-3.5 h-3.5 text-[#5B6CFF] shrink-0" />
+        <div className="px-3.5 py-1.5 rounded-full bg-indigo-50/80 dark:bg-indigo-950/60 border border-indigo-200/40 dark:border-indigo-800/40 text-[11px] font-semibold text-indigo-700 dark:text-indigo-300 flex items-center space-x-1.5 shadow-xs">
+          <Lock className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 shrink-0" />
           <span>Messages & calls are end-to-end encrypted.</span>
         </div>
       </div>

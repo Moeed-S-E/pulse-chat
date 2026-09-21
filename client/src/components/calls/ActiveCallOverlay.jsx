@@ -1,7 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useCall } from '../../context/CallContext';
+import { useAuth } from '../../context/AuthContext';
+import { useSocket } from '../../context/SocketContext';
 import { useToast } from '../../context/ToastContext';
 import Avatar from '../ui/Avatar';
+import Modal from '../ui/Modal';
+import Input from '../ui/Input';
+import Button from '../ui/Button';
+import {
+  UserPlus, Copy, Check, Mic, MicOff, Video, VideoOff, PhoneOff,
+  Maximize2, Minimize2, Users, Search, AtSign, CheckCircle2, X
+} from 'lucide-react';
 
 // Individual Video Tile component for attached MediaStream
 const VideoTile = ({ stream, isLocal, name, username, isMuted, isCameraOff }) => {
@@ -9,45 +18,55 @@ const VideoTile = ({ stream, isLocal, name, username, isMuted, isCameraOff }) =>
 
   useEffect(() => {
     if (videoRef.current && stream) {
-      videoRef.current.srcObject = stream;
+      if (videoRef.current.srcObject !== stream) {
+        videoRef.current.srcObject = stream;
+      }
     }
-  }, [stream]);
+  }, [stream, isCameraOff]);
+
+  const setVideoRef = (node) => {
+    videoRef.current = node;
+    if (node && stream && node.srcObject !== stream) {
+      node.srcObject = stream;
+    }
+  };
+
+  const hasVideo = stream && !isCameraOff;
 
   return (
-    <div className="relative bg-slate-950/80 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center min-h-55 shadow-lg group">
-      {stream && !isCameraOff ? (
+    <div className="relative bg-slate-900 rounded-3xl overflow-hidden border border-slate-800/80 w-full h-full min-h-[300px] aspect-video shadow-2xl flex items-center justify-center group">
+      {hasVideo ? (
         <video
-          ref={videoRef}
+          ref={setVideoRef}
           autoPlay
           playsInline
           muted={isLocal}
-          className={`w-full h-full object-cover rounded-2xl ${isLocal ? '-scale-x-1' : ''}`}
+          style={{ transform: isLocal ? 'scaleX(-1)' : 'none' }}
+          className="absolute inset-0 w-full h-full object-cover rounded-3xl"
         />
       ) : (
-        <div className="flex flex-col items-center justify-center p-6 text-center">
+        <div className="flex flex-col items-center justify-center p-6 text-center z-10">
           <Avatar name={name || 'Participant'} size="xl" />
-          <p className="mt-3 font-semibold text-sm text-slate-200">{name}</p>
-          {username && <p className="text-xs text-cyan-400 font-mono">@{username}</p>}
+          <p className="mt-3 font-bold text-base text-slate-100">{name}</p>
+          {username && <p className="text-xs text-indigo-400 font-mono">@{username}</p>}
         </div>
       )}
 
       {/* Overlay Badge */}
-      <div className="absolute bottom-3 left-3 bg-slate-900/80 backdrop-blur-md px-3 py-1 rounded-xl text-xs text-slate-200 border border-slate-700/60 flex items-center gap-1.5 shadow-md">
-        <span className="font-medium truncate max-w-30">{isLocal ? 'You' : name}</span>
-        {username && <span className="text-[10px] text-cyan-400 font-mono">@{username}</span>}
+      <div className="absolute bottom-4 left-4 z-20 bg-slate-950/80 backdrop-blur-md px-3.5 py-1.5 rounded-2xl text-xs text-slate-200 border border-slate-800 flex items-center gap-2 shadow-lg">
+        <span className="font-bold truncate max-w-32">{isLocal ? 'You' : name}</span>
+        {username && <span className="text-[11px] text-indigo-400 font-mono">@{username}</span>}
         {isMuted ? (
-          <svg className="w-3.5 h-3.5 text-rose-400 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-          </svg>
+          <span className="px-1.5 py-0.5 rounded-md bg-rose-500/20 text-rose-400 text-[10px] font-bold">Muted</span>
         ) : (
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-1"></span>
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse ml-0.5"></span>
         )}
       </div>
     </div>
   );
 };
 
-const ActiveCallOverlay = () => {
+export default function ActiveCallOverlay() {
   const {
     callState,
     callInfo,
@@ -61,12 +80,22 @@ const ActiveCallOverlay = () => {
     endCall,
     toggleMic,
     toggleCamera,
+    start1toMCall,
   } = useCall();
+
+  const { token } = useAuth();
+  const { socket } = useSocket();
   const { showToast } = useToast();
 
   const [viewMode, setViewMode] = useState('auto'); // 'auto' | 'voice' | 'video'
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [inviteQuery, setInviteQuery] = useState('');
+  const [searchUsers, setSearchUsers] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [invitedUserIds, setInvitedUserIds] = useState(new Set());
+  const [copiedCode, setCopiedCode] = useState(false);
 
-  if (callState !== 'active' && !isFullScreen) return null;
+  if (callState !== 'active') return null;
 
   const isAudioCall = callInfo?.callType === 'audio' || isCameraOff;
   const isVoiceView = viewMode === 'voice' || (viewMode === 'auto' && isAudioCall);
@@ -74,6 +103,52 @@ const ActiveCallOverlay = () => {
   const mainPeer = remoteStreams[0];
   const calleeName = callInfo?.calleeInfo?.name || mainPeer?.username || 'Peer';
   const calleeUsername = callInfo?.calleeInfo?.username || mainPeer?.username;
+
+  // Search users for invite modal
+  useEffect(() => {
+    if (!isInviteModalOpen) return;
+    const search = async () => {
+      setSearching(true);
+      try {
+        const res = await fetch(`/api/users/search?q=${encodeURIComponent(inviteQuery)}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setSearchUsers(data.users || []);
+        }
+      } catch (err) {
+        console.error('Error searching users for call invite:', err);
+      } finally {
+        setSearching(false);
+      }
+    };
+    const t = setTimeout(search, 250);
+    return () => clearTimeout(t);
+  }, [inviteQuery, isInviteModalOpen, token]);
+
+  const handleCopyCode = () => {
+    const code = callInfo?.roomCode || 'PULSE-8821';
+    navigator.clipboard?.writeText(code);
+    setCopiedCode(true);
+    showToast(`Copied room code ${code} to clipboard!`, 'success');
+    setTimeout(() => setCopiedCode(false), 2000);
+  };
+
+  const handleInviteUser = (u) => {
+    setInvitedUserIds((prev) => new Set(prev).add(u._id));
+    const roomCode = callInfo?.roomCode || 'PULSE-8821';
+
+    // Emit socket invite event if available
+    if (socket) {
+      socket.emit('call:invite:room', {
+        targetUserId: u._id,
+        roomCode,
+      });
+    }
+
+    showToast(`Invited @${u.username} to join room ${roomCode}!`, 'success');
+  };
 
   // Dynamic responsive grid styles based on participant count
   const getGridColsClass = () => {
@@ -83,15 +158,134 @@ const ActiveCallOverlay = () => {
     return 'grid-cols-2 md:grid-cols-3';
   };
 
-  const handleCopyCode = () => {
-    if (callInfo?.roomCode) {
-      navigator.clipboard?.writeText(callInfo.roomCode);
-      showToast(`Copied meeting code ${callInfo.roomCode} to clipboard!`, 'success');
-    }
-  };
+  /* ── 1. Floating Minimized Picture-in-Picture Bar (when !isFullScreen) ── */
+  if (!isFullScreen) {
+    return (
+      <div className="fixed bottom-6 right-6 z-50 bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl p-3 shadow-2xl flex items-center space-x-3.5 animate-fade-in text-slate-100 max-w-md">
+        <div className="relative shrink-0">
+          <div className="w-3.5 h-3.5 rounded-full bg-emerald-500 animate-pulse" />
+        </div>
 
+        <div className="min-w-0 flex-1">
+          <div className="text-xs font-bold truncate text-slate-100">{calleeName}</div>
+          <div className="text-[11px] font-mono text-cyan-400 font-semibold">{callDuration}</div>
+        </div>
+
+        <div className="flex items-center space-x-1.5 shrink-0">
+          <button
+            type="button"
+            onClick={toggleMic}
+            title={isMuted ? 'Unmute Mic' : 'Mute Mic'}
+            className={`p-2 rounded-xl text-xs transition-colors cursor-pointer ${
+              isMuted ? 'bg-rose-500/20 text-rose-400' : 'bg-slate-800 text-slate-300 hover:text-white'
+            }`}
+          >
+            {isMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+          </button>
+
+          <button
+            type="button"
+            onClick={toggleCamera}
+            title={isCameraOff ? 'Turn Camera On' : 'Turn Camera Off'}
+            className={`p-2 rounded-xl text-xs transition-colors cursor-pointer ${
+              isCameraOff ? 'bg-rose-500/20 text-rose-400' : 'bg-slate-800 text-slate-300 hover:text-white'
+            }`}
+          >
+            {isCameraOff ? <VideoOff className="w-4 h-4" /> : <Video className="w-4 h-4" />}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsFullScreen(true)}
+            title="Expand Full Screen"
+            className="p-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center space-x-1 cursor-pointer transition-colors shadow-md"
+          >
+            <Maximize2 className="w-4 h-4" />
+            <span className="hidden sm:inline">Expand</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={endCall}
+            title="End Call"
+            className="p-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white cursor-pointer transition-colors shadow-md"
+          >
+            <PhoneOff className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── 2. Full-Screen Active Call Overlay ───────────────────────────────── */
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-2xl flex flex-col p-4 md:p-6 animate-fade-in">
+      {/* Invite Participants Modal */}
+      <Modal
+        isOpen={isInviteModalOpen}
+        onClose={() => setIsInviteModalOpen(false)}
+        title="Add Participants to Call"
+        subtitle="Search users by @username or share the meeting room code"
+      >
+        <div className="space-y-4">
+          <div className="p-3 bg-slate-900 rounded-2xl border border-slate-800 flex items-center justify-between">
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Meeting Room Code</div>
+              <div className="text-sm font-mono font-bold text-cyan-400">{callInfo?.roomCode || 'PULSE-8821'}</div>
+            </div>
+            <Button onClick={handleCopyCode} variant="secondary" size="sm" className="rounded-xl">
+              {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copiedCode ? 'Copied' : 'Copy Code'}</span>
+            </Button>
+          </div>
+
+          <div>
+            <Input
+              icon={AtSign}
+              placeholder="Search user by @username..."
+              value={inviteQuery}
+              onChange={(e) => setInviteQuery(e.target.value)}
+              autoFocus
+            />
+          </div>
+
+          <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
+            {searching ? (
+              <div className="py-6 text-center text-xs font-semibold text-slate-400">Searching users...</div>
+            ) : searchUsers.length === 0 ? (
+              <div className="py-6 text-center text-xs font-medium text-slate-400">
+                {inviteQuery ? `No user found for "@${inviteQuery}"` : 'Type a username above to invite friends'}
+              </div>
+            ) : (
+              searchUsers.map((u) => {
+                const isInvited = invitedUserIds.has(u._id);
+                return (
+                  <div key={u._id} className="flex items-center justify-between p-3 rounded-2xl bg-slate-800/80 border border-slate-700/60">
+                    <div className="flex items-center space-x-3">
+                      <Avatar initial={u.avatarInitial} name={u.name} size="md" />
+                      <div>
+                        <h4 className="text-sm font-bold text-slate-100">{u.name}</h4>
+                        <p className="text-xs font-medium text-slate-400">@{u.username}</p>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={() => handleInviteUser(u)}
+                      disabled={isInvited}
+                      variant={isInvited ? 'secondary' : 'primary'}
+                      size="sm"
+                      className="px-4 rounded-xl"
+                    >
+                      {isInvited ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <UserPlus className="w-3.5 h-3.5" />}
+                      <span>{isInvited ? 'Invited' : 'Invite'}</span>
+                    </Button>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      </Modal>
+
       {/* --- Top Header Bar --- */}
       <div className="flex items-center justify-between pb-4 border-b border-slate-800">
         <div className="flex items-center gap-3">
@@ -109,6 +303,16 @@ const ActiveCallOverlay = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Add Participant Button */}
+          <button
+            onClick={() => setIsInviteModalOpen(true)}
+            className="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
+            title="Invite People to Call"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>Add Participant</span>
+          </button>
+
           {/* View Mode Switcher */}
           <div className="flex bg-slate-900 border border-slate-800 p-1 rounded-xl text-xs font-semibold">
             <button
@@ -129,30 +333,15 @@ const ActiveCallOverlay = () => {
             </button>
           </div>
 
-          {/* Minimize to Snackbar button */}
+          {/* Minimize Button */}
           <button
             onClick={() => setIsFullScreen(false)}
             className="bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
-            title="Minimize to Floating Snackbar"
+            title="Minimize to Floating Bar"
           >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-            Minimize
+            <Minimize2 className="w-3.5 h-3.5" />
+            <span>Minimize</span>
           </button>
-
-          {/* Room Code Badge */}
-          {callInfo?.roomCode && (
-            <button
-              onClick={handleCopyCode}
-              className="bg-slate-900 hover:bg-slate-800 border border-cyan-500/40 text-cyan-300 px-3 py-1.5 rounded-xl text-xs font-mono font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
-            >
-              <svg className="w-3.5 h-3.5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-              {callInfo.roomCode}
-            </button>
-          )}
         </div>
       </div>
 
@@ -161,10 +350,8 @@ const ActiveCallOverlay = () => {
         {isVoiceView ? (
           /* FULL SCREEN VOICE CALL PREVIEW */
           <div className="flex flex-col items-center justify-center text-center p-8 bg-slate-900/60 rounded-3xl border border-slate-800/80 max-w-lg w-full shadow-2xl relative overflow-hidden">
-            {/* Glowing Ambient Light Rings */}
             <div className="absolute w-72 h-72 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none animate-pulse"></div>
 
-            {/* Avatar with Pulsing Aura */}
             <div className="relative mb-6">
               <div className="w-36 h-36 md:w-44 md:h-44 rounded-full pulse-gradient-bg flex items-center justify-center text-white text-5xl font-black shadow-2xl shadow-cyan-500/20 border-4 border-slate-800">
                 {calleeName.charAt(0).toUpperCase()}
@@ -177,7 +364,6 @@ const ActiveCallOverlay = () => {
               <p className="text-sm text-cyan-400 font-mono mt-1">@{calleeUsername}</p>
             )}
 
-            {/* Live Audio Waveform Animation */}
             <div className="flex items-center gap-1.5 my-5">
               <span className="w-1.5 h-6 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
               <span className="w-1.5 h-9 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
@@ -218,9 +404,7 @@ const ActiveCallOverlay = () => {
             {/* Waiting for peers message if only local stream in room */}
             {remoteStreams.length === 0 && callInfo?.isRoomCall && (
               <div className="bg-slate-900/40 rounded-2xl border border-dashed border-slate-800 flex flex-col items-center justify-center p-6 text-center">
-                <svg className="w-10 h-10 text-cyan-400/60 mb-2 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
+                <Users className="w-10 h-10 text-cyan-400/60 mb-2 animate-bounce" />
                 <p className="text-sm font-semibold text-slate-300">Waiting for participants to join...</p>
                 <p className="text-xs text-slate-500 mt-1">Share code <span className="font-mono text-cyan-400">{callInfo.roomCode}</span> to invite others.</p>
               </div>
@@ -230,7 +414,7 @@ const ActiveCallOverlay = () => {
       </div>
 
       {/* --- Floating Bottom Control Toolbar --- */}
-      <div className="pt-4 border-t border-slate-800 flex items-center justify-center gap-4">
+      <div className="pt-4 border-t border-slate-800 flex items-center justify-center gap-3">
         {/* Toggle Mic */}
         <button
           onClick={toggleMic}
@@ -241,12 +425,10 @@ const ActiveCallOverlay = () => {
           }`}
           title={isMuted ? 'Unmute Microphone' : 'Mute Microphone'}
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-          </svg>
+          {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
         </button>
 
-        {/* Toggle Camera (Switch from Voice Call to Video Call) */}
+        {/* Toggle Camera */}
         <button
           onClick={() => {
             toggleCamera();
@@ -259,37 +441,28 @@ const ActiveCallOverlay = () => {
           }`}
           title={isCameraOff ? 'Turn Camera On' : 'Turn Camera Off'}
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-          </svg>
+          {isCameraOff ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
         </button>
 
-        {/* Copy Meeting Code */}
-        {callInfo?.roomCode && (
-          <button
-            onClick={handleCopyCode}
-            className="p-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-slate-700 transition-all cursor-pointer shadow-lg"
-            title="Copy Meeting Room Code"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
-          </button>
-        )}
+        {/* Add Participant Button */}
+        <button
+          onClick={() => setIsInviteModalOpen(true)}
+          className="p-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-500/40 transition-all cursor-pointer shadow-lg flex items-center gap-2"
+          title="Add Participant"
+        >
+          <UserPlus className="w-5 h-5" />
+          <span className="hidden sm:inline text-xs font-bold">Add Participant</span>
+        </button>
 
         {/* End Call Button */}
         <button
           onClick={endCall}
           className="bg-rose-600 hover:bg-rose-500 text-white font-semibold py-3.5 px-6 rounded-2xl shadow-xl shadow-rose-600/40 transition-all flex items-center gap-2 cursor-pointer"
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M5 3a2 2 0 00-2 2v1c0 8.284 6.716 15 15 15h1a2 2 0 002-2v-3.28a1 1 0 00-.684-.948l-4.493-1.498a1 1 0 00-1.21.502l-1.13 2.257a11.042 11.042 0 01-5.516-5.517l2.257-1.128a1 1 0 00.502-1.21L9.228 3.684A1 1 0 008.279 3H5z" />
-          </svg>
-          End Call
+          <PhoneOff className="w-5 h-5" />
+          <span>End Call</span>
         </button>
       </div>
     </div>
   );
-};
-
-export default ActiveCallOverlay;
+}
