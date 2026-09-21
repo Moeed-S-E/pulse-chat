@@ -36,6 +36,18 @@ const setupSocketHandler = (io) => {
     // Join user's personal room for 1:1 call signaling
     socket.join(`user:${userId}`);
 
+    // Automatically join all channel socket rooms for this user
+    try {
+      const userChannels = await Channel.find({
+        $or: [{ isDM: false }, { memberIds: userId }],
+      }).select('_id');
+      userChannels.forEach((c) => {
+        socket.join(`channel:${c._id}`);
+      });
+    } catch (err) {
+      console.error('[Socket] Error auto-joining channel rooms:', err);
+    }
+
     // Update user presence to online
     try {
       await User.findByIdAndUpdate(userId, { isOnline: true, lastSeen: new Date() });

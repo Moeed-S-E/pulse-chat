@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/home/Sidebar';
 import ChatView from '../components/home/ChatView';
+import CallsView from '../components/calls/CallsView';
 import ConnectModal from '../components/home/ConnectModal';
 import JoinCallSnackbar from '../components/calls/JoinCallSnackbar';
 import Modal from '../components/ui/Modal';
@@ -13,6 +14,7 @@ import { useSocket } from '../context/SocketContext';
 export default function HomePage() {
   const [channels, setChannels] = useState([]);
   const [selectedChannel, setSelectedChannel] = useState(null);
+  const [activeView, setActiveView] = useState('chats'); // 'chats' | 'calls'
   const [mobileShowChat, setMobileShowChat] = useState(false);
   const [isConnectOpen, setIsConnectOpen] = useState(false);
   const [isCreateChannelOpen, setIsCreateChannelOpen] = useState(false);
@@ -33,7 +35,13 @@ export default function HomePage() {
 
   const handleSelectChannel = (channel) => {
     setSelectedChannel(channel);
+    setActiveView('chats');
     setMobileShowChat(true);
+  };
+
+  const handleSelectView = (view) => {
+    setActiveView(view);
+    setMobileShowChat(false);
   };
 
   const fetchChannels = async () => {
@@ -74,7 +82,10 @@ export default function HomePage() {
     const handleLastMessageUpdate = ({ channelId, lastMessage }) => {
       setChannels((prevChannels) => {
         const targetIndex = prevChannels.findIndex((c) => c._id === channelId);
-        if (targetIndex === -1) return prevChannels;
+        if (targetIndex === -1) {
+          fetchChannels();
+          return prevChannels;
+        }
 
         const updatedChannel = {
           ...prevChannels[targetIndex],
@@ -87,12 +98,18 @@ export default function HomePage() {
       });
     };
 
+    const handleChannelCreated = (newChannel) => {
+      fetchChannels();
+    };
+
     socket.on('channel:last_message', handleLastMessageUpdate);
+    socket.on('channel:created', handleChannelCreated);
 
     return () => {
       socket.off('channel:last_message', handleLastMessageUpdate);
+      socket.off('channel:created', handleChannelCreated);
     };
-  }, [socket]);
+  }, [socket, token]);
 
   // Live member search when creating group / broadcast
   useEffect(() => {
@@ -156,6 +173,7 @@ export default function HomePage() {
         const data = await res.json();
         setChannels((prev) => [data.channel, ...prev]);
         setSelectedChannel(data.channel);
+        setActiveView('chats');
         resetCreateModal();
         return;
       }
@@ -175,6 +193,7 @@ export default function HomePage() {
 
     setChannels((prev) => [newChan, ...prev]);
     setSelectedChannel(newChan);
+    setActiveView('chats');
     resetCreateModal();
   };
 
@@ -188,25 +207,45 @@ export default function HomePage() {
 
   return (
     <div className="flex h-screen bg-[#F7F8FA] dark:bg-pulse-dark-bg overflow-hidden relative">
-      {/* Sidebar: Full width on mobile when chat is hidden, hidden on mobile when chat is open */}
+      {/* Sidebar / CallsView List Column (Mobile List View or Desktop Left Column) */}
       <div className={`w-full md:w-80 lg:w-96 h-full shrink-0 ${mobileShowChat ? 'hidden md:flex' : 'flex'}`}>
-        <Sidebar
-          channels={channels}
-          selectedChannel={selectedChannel}
-          onSelectChannel={handleSelectChannel}
-          onOpenConnect={() => setIsConnectOpen(true)}
-          onOpenCreateChannel={() => setIsCreateChannelOpen(true)}
-          onOpenJoinCall={() => setIsJoinCallOpen(true)}
-          loading={loading}
-        />
+        {activeView === 'calls' ? (
+          <CallsView
+            channels={channels}
+            activeView={activeView}
+            onSelectView={handleSelectView}
+            onOpenJoinCall={() => setIsJoinCallOpen(true)}
+          />
+        ) : (
+          <Sidebar
+            channels={channels}
+            selectedChannel={selectedChannel}
+            onSelectChannel={handleSelectChannel}
+            activeView={activeView}
+            onSelectView={handleSelectView}
+            onOpenConnect={() => setIsConnectOpen(true)}
+            onOpenCreateChannel={() => setIsCreateChannelOpen(true)}
+            onOpenJoinCall={() => setIsJoinCallOpen(true)}
+            loading={loading}
+          />
+        )}
       </div>
 
-      {/* ChatView: Full width on mobile when chat is open, hidden on mobile when chat is hidden */}
+      {/* Main View Area: ChatView on Desktop or when mobileShowChat is true */}
       <div className={`w-full flex-1 h-full min-w-0 ${mobileShowChat ? 'flex' : 'hidden md:flex'}`}>
-        <ChatView
-          channel={selectedChannel}
-          onBack={() => setMobileShowChat(false)}
-        />
+        {activeView === 'calls' ? (
+          <CallsView
+            channels={channels}
+            activeView={activeView}
+            onSelectView={handleSelectView}
+            onOpenJoinCall={() => setIsJoinCallOpen(true)}
+          />
+        ) : (
+          <ChatView
+            channel={selectedChannel}
+            onBack={() => setMobileShowChat(false)}
+          />
+        )}
       </div>
 
       <ConnectModal
@@ -215,6 +254,7 @@ export default function HomePage() {
         onSelectChannel={(c) => {
           setChannels((prev) => [c, ...prev.filter((item) => item._id !== c._id)]);
           setSelectedChannel(c);
+          setActiveView('chats');
         }}
       />
 

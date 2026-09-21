@@ -48,6 +48,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 25 * 1024 * 1024,
 });
 
+app.set('io', io);
 setupSocketHandler(io);
 
 // MongoDB connection & server start

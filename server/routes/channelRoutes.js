@@ -79,6 +79,15 @@ router.post('/', authMiddleware, async (req, res) => {
     await channel.populate('memberIds', 'name username avatarInitial avatarColor isOnline lastSeen');
     await channel.populate('createdBy', 'name username');
 
+    // Notify all channel members via socket
+    const io = req.app.get('io');
+    if (io) {
+      channel.memberIds.forEach((m) => {
+        const memberIdStr = typeof m === 'object' ? m._id.toString() : m.toString();
+        io.to(`user:${memberIdStr}`).emit('channel:created', channel);
+      });
+    }
+
     res.status(201).json({ channel });
   } catch (error) {
     console.error('Error creating channel/group:', error);
@@ -153,7 +162,9 @@ router.post('/dm/:targetUserId', authMiddleware, async (req, res) => {
       memberIds: { $all: [currentUserId, targetUserId] },
     }).populate('memberIds', 'name username avatarInitial avatarColor isOnline lastSeen');
 
+    let isNew = false;
     if (!channel) {
+      isNew = true;
       channel = new Channel({
         name: `dm-${currentUserId}-${targetUserId}`,
         isDM: true,
@@ -163,6 +174,16 @@ router.post('/dm/:targetUserId', authMiddleware, async (req, res) => {
 
       await channel.save();
       await channel.populate('memberIds', 'name username avatarInitial avatarColor isOnline lastSeen');
+    }
+
+    if (isNew) {
+      const io = req.app.get('io');
+      if (io) {
+        channel.memberIds.forEach((m) => {
+          const memberIdStr = typeof m === 'object' ? m._id.toString() : m.toString();
+          io.to(`user:${memberIdStr}`).emit('channel:created', channel);
+        });
+      }
     }
 
     res.status(200).json({ channel });
