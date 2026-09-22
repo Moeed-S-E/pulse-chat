@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
+import { SOCKET_URL } from '../config/api';
 
 const SocketContext = createContext(null);
 
@@ -19,7 +20,7 @@ export const SocketProvider = ({ children }) => {
     }
 
     // Connect socket
-    const newSocket = io(window.location.origin, {
+    const newSocket = io(SOCKET_URL, {
       auth: { token },
       transports: ['websocket', 'polling'],
       reconnection: true,

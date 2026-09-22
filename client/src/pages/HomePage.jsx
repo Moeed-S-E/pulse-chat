@@ -10,6 +10,7 @@ import Button from '../components/ui/Button';
 import { Hash, Search, Check, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
+import { apiFetch } from '../config/api';
 import {
   playMessageNotificationSound,
   showDesktopNotification,
@@ -53,7 +54,7 @@ export default function HomePage() {
     if (!token) return;
     setLoading(true);
     try {
-      const res = await fetch('/api/channels', {
+      const res = await apiFetch('/api/channels', {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -154,7 +155,7 @@ export default function HomePage() {
     const searchMembers = async () => {
       setSearchingUsers(true);
       try {
-        const res = await fetch(`/api/users/search?q=${encodeURIComponent(memberSearchQuery)}`, {
+        const res = await apiFetch(`/api/users/search?q=${encodeURIComponent(memberSearchQuery)}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
@@ -191,7 +192,7 @@ export default function HomePage() {
     const memberIds = selectedMembers.map((m) => m._id);
 
     try {
-      const res = await fetch('/api/channels', {
+      const res = await apiFetch('/api/channels', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

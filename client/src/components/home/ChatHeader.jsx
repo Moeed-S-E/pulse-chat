@@ -3,6 +3,7 @@ import { Video, Phone, MoreVertical, Hash, Copy, Check, BellOff, ArrowLeft, Tras
 import Avatar from '../ui/Avatar';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
+import { apiFetch } from '../../config/api';
 
 export default function ChatHeader({
   channel,
@@ -57,7 +58,7 @@ export default function ChatHeader({
     }
 
     try {
-      const res = await fetch(`/api/channels/${channel._id}`, {
+      const res = await apiFetch(`/api/channels/${channel._id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });

@@ -22,6 +22,7 @@ import Button from '../ui/Button';
 import { useAuth } from '../../context/AuthContext';
 import { useCall } from '../../context/CallContext';
 import { useSocket } from '../../context/SocketContext';
+import { apiFetch } from '../../config/api';
 
 export default function CallsView({
   channels,
@@ -42,7 +43,7 @@ export default function CallsView({
   // Fetch backend call logs from /api/calls
   React.useEffect(() => {
     if (!token) return;
-    fetch('/api/calls', {
+    apiFetch('/api/calls', {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => (res.ok ? res.json() : null))
@@ -58,7 +59,7 @@ export default function CallsView({
     if (!token) return;
     if (!window.confirm('Are you sure you want to clear your entire call history?')) return;
     try {
-      const res = await fetch('/api/calls', {
+      const res = await apiFetch('/api/calls', {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -73,7 +74,7 @@ export default function CallsView({
   const handleDeleteCallLog = async (callId) => {
     if (!token || !callId) return;
     try {
-      const res = await fetch(`/api/calls/${callId}`, {
+      const res = await apiFetch(`/api/calls/${callId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });

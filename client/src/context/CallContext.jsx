@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useRef } from 'r
 import { useSocket } from './SocketContext';
 import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
+import { apiFetch } from '../config/api';
 import {
   playIncomingRingtone,
   stopIncomingRingtone,
@@ -467,7 +468,7 @@ export const CallProvider = ({ children }) => {
     if (!targetUsername || !token) return;
     const cleanUsername = targetUsername.toLowerCase().trim().replace(/^@/, '');
 
-    const res = await fetch(`/api/users/search?q=${encodeURIComponent(cleanUsername)}`, {
+    const res = await apiFetch(`/api/users/search?q=${encodeURIComponent(cleanUsername)}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
 

@@ -6,6 +6,7 @@ import MessageInput from './MessageInput';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
 import { useCall } from '../../context/CallContext';
+import { apiFetch } from '../../config/api';
 
 import { encryptMessage } from '../../utils/crypto';
 
@@ -36,7 +37,7 @@ export default function ChatView({ channel, channels = [], onBack }) {
     const fetchMessages = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/channels/${channel._id}/messages`, {
+        const res = await apiFetch(`/api/channels/${channel._id}/messages`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
@@ -165,7 +166,7 @@ export default function ChatView({ channel, channels = [], onBack }) {
     if (!token || !channel?._id) return;
     try {
       const encryptedContent = await encryptMessage(newRawContent, channel._id);
-      const res = await fetch(`/api/messages/${messageId}`, {
+      const res = await apiFetch(`/api/messages/${messageId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -187,7 +188,7 @@ export default function ChatView({ channel, channels = [], onBack }) {
   const handleDeleteMessage = async (messageId) => {
     if (!token) return;
     try {
-      const res = await fetch(`/api/messages/${messageId}`, {
+      const res = await apiFetch(`/api/messages/${messageId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -209,7 +210,7 @@ export default function ChatView({ channel, channels = [], onBack }) {
     if (!token) return;
     try {
       const encryptedForTarget = await encryptMessage(decryptedText, targetChannelId);
-      await fetch(`/api/messages/${messageId}/forward`, {
+      await apiFetch(`/api/messages/${messageId}/forward`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

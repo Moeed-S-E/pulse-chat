@@ -3,6 +3,7 @@ import { CallContext } from '../../context/CallContext';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
 import { useToast } from '../../context/ToastContext';
+import { apiFetch } from '../../config/api';
 import Avatar from '../ui/Avatar';
 import Modal from '../ui/Modal';
 import Input from '../ui/Input';
@@ -104,7 +105,7 @@ export default function ActiveCallOverlay() {
     const search = async () => {
       setSearching(true);
       try {
-        const res = await fetch(`/api/users/search?q=${encodeURIComponent(inviteQuery)}`, {
+        const res = await apiFetch(`/api/users/search?q=${encodeURIComponent(inviteQuery)}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {

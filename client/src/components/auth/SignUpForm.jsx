@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { apiFetch } from '../../config/api';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
 import { User, AtSign, Mail, Lock, ArrowRight, CheckCircle2, AlertCircle } from 'lucide-react';
@@ -37,7 +38,7 @@ export default function SignUpForm() {
 
     const timer = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/auth/check-username/${encodeURIComponent(cleanUsername)}`);
+        const res = await apiFetch(`/api/auth/check-username/${encodeURIComponent(cleanUsername)}`);
         if (res.ok) {
           const data = await res.json();
           if (data.available) {

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { apiFetch } from '../config/api';
 
 const AuthContext = createContext(null);
 
@@ -16,7 +17,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       try {
-        const res = await fetch('/api/auth/me', {
+        const res = await apiFetch('/api/auth/me', {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -42,7 +43,7 @@ export const AuthProvider = ({ children }) => {
   }, [token]);
 
   const login = async (loginIdentifier, password) => {
-    const res = await fetch('/api/auth/login', {
+    const res = await apiFetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ loginIdentifier, password }),
@@ -60,7 +61,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const signup = async (name, username, email, password) => {
-    const res = await fetch('/api/auth/signup', {
+    const res = await apiFetch('/api/auth/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, username, email, password }),
@@ -84,7 +85,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const updateProfile = async (name, username, bio, avatarColor) => {
-    const res = await fetch('/api/auth/profile', {
+    const res = await apiFetch('/api/auth/profile', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

@@ -14,6 +14,7 @@ import LandingPage from './pages/LandingPage';
 
 import ToastSnackbarContainer from './components/ui/ToastSnackbarContainer';
 import ActiveCallOverlay from './components/calls/ActiveCallOverlay';
+import HealthKeepAlive from './components/common/HealthKeepAlive';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -117,6 +118,8 @@ export default function App() {
                   <ToastSnackbarContainer />
                   {/* Global 1:M Active Video Call Overlay */}
                   <ActiveCallOverlay />
+                  {/* Backend Health Check 15s Timer Keep-Alive */}
+                  <HealthKeepAlive />
 
                   <Routes>
                     <Route path="/" element={<LandingPage />} />

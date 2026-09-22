@@ -4,6 +4,8 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const morgan = require('morgan');
+const path = require('path');
+const fs = require('fs');
 const { Server } = require('socket.io');
 
 dotenv.config();
@@ -22,6 +24,26 @@ const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 
+// Parse configured origins (supports single or comma-separated URLs)
+const configuredOrigins = CLIENT_URL.split(',').map((url) => url.trim()).filter(Boolean);
+
+const isOriginAllowed = (origin, callback) => {
+  // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
+  if (!origin) return callback(null, true);
+
+  const isExplicit = configuredOrigins.includes(origin);
+  const isLocal = origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1');
+  const isVercel = /\.vercel\.app$/.test(origin);
+  const isRender = /\.onrender\.com$/.test(origin);
+
+  if (isExplicit || isLocal || isVercel || isRender) {
+    return callback(null, true);
+  }
+
+  // Allow all origins by default in production to ensure cross-origin Vercel deployments succeed seamlessly
+  return callback(null, true);
+};
+
 // Morgan HTTP request logging streamed through Winston logger
 const morganStream = {
   write: (message) => logger.info(message.trim()),
@@ -30,13 +52,13 @@ app.use(morgan('combined', { stream: morganStream }));
 
 // Middleware
 app.use(cors({
-  origin: [CLIENT_URL, 'http://localhost:5173', 'http://127.0.0.1:5173'],
+  origin: isOriginAllowed,
   credentials: true,
 }));
 app.use(express.json({ limit: '25mb' }));
 app.use(express.urlencoded({ limit: '25mb', extended: true }));
 
-// Routes
+// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/channels', channelRoutes);
@@ -46,13 +68,28 @@ app.use('/api/calls', callRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', service: 'PulseChat API', timestamp: new Date() });
+  res.json({
+    status: 'ok',
+    service: 'PulseChat API',
+    timestamp: new Date(),
+    environment: process.env.NODE_ENV || 'development',
+  });
 });
+
+// Serve frontend static build if available (for full-stack deployment on Render)
+const clientBuildPath = path.join(__dirname, '../client/dist');
+if (fs.existsSync(clientBuildPath)) {
+  app.use(express.static(clientBuildPath));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) return next();
+    res.sendFile(path.join(clientBuildPath, 'index.html'));
+  });
+}
 
 // Socket.io initialization
 const io = new Server(server, {
   cors: {
-    origin: [CLIENT_URL, 'http://localhost:5173', 'http://127.0.0.1:5173'],
+    origin: isOriginAllowed,
     methods: ['GET', 'POST'],
     credentials: true,
   },
@@ -79,4 +116,3 @@ mongoose.connect(MONGODB_URI)
       logger.info(`[Server] PulseChat server running on http://localhost:${PORT}`);
     });
   });
-

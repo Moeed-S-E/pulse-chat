@@ -127,3 +127,4 @@ temp/
 
 # TypeScript (if used)
 *.tsbuildinfo
+DEPLOY*.md

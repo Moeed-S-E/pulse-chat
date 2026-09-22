@@ -6,6 +6,7 @@ import Button from '../ui/Button';
 import Avatar from '../ui/Avatar';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
+import { apiFetch } from '../../config/api';
 
 export default function ConnectModal({ isOpen, onClose, onSelectChannel }) {
   const [query, setQuery] = useState('');
@@ -26,7 +27,7 @@ export default function ConnectModal({ isOpen, onClose, onSelectChannel }) {
     const searchUsers = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/users/search?q=${encodeURIComponent(query)}`, {
+        const res = await apiFetch(`/api/users/search?q=${encodeURIComponent(query)}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
@@ -46,7 +47,7 @@ export default function ConnectModal({ isOpen, onClose, onSelectChannel }) {
 
   const handleConnect = async (targetUser) => {
     try {
-      const res = await fetch(`/api/channels/dm/${targetUser._id}`, {
+      const res = await apiFetch(`/api/channels/dm/${targetUser._id}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       });
