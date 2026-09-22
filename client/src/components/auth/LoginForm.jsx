@@ -57,7 +57,7 @@ export default function LoginForm() {
               e.preventDefault();
               alert('Demo mode: Please sign up a new user or use your password.');
             }}
-            className="text-xs font-bold text-pulse-blue hover:underline"
+            className="text-xs font-bold text-emerald-600 hover:underline"
           >
             Forgot password?
           </a>
@@ -85,7 +85,7 @@ export default function LoginForm() {
 
       <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800 text-center text-xs text-slate-500 dark:text-slate-400 font-medium">
         Don't have an account?{' '}
-        <Link to="/signup" className="font-bold text-pulse-blue hover:underline ml-1">
+        <Link to="/signup" className="font-bold text-emerald-600 hover:underline ml-1">
           Sign Up
         </Link>
       </div>

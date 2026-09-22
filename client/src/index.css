@@ -4,9 +4,8 @@
 
 @theme {
 
-  --color-pulse-blue: #5B6CFF;
-  --color-pulse-purple: #7C4DFF;
-  --color-pulse-green: #10B981;
+  --color-pulse-green: #059669;
+  --color-pulse-emerald: #10B981;
   --color-pulse-red: #EF4444;
   --color-pulse-dark-bg: #1E2429;
   --color-pulse-panel-bg: #262C31;
@@ -70,11 +69,11 @@
 
   0%,
   100% {
-    box-shadow: 0 0 0 0px rgba(91, 108, 255, 0.6);
+    box-shadow: 0 0 0 0px rgba(16, 185, 129, 0.6);
   }
 
   70% {
-    box-shadow: 0 0 0 25px rgba(91, 108, 255, 0);
+    box-shadow: 0 0 0 25px rgba(16, 185, 129, 0);
   }
 }
 
@@ -152,24 +151,20 @@ html.dark .wa-incoming-bubble {
 
 /* Solid Brand Accent & Utility Classes */
 .pulse-gradient-bg {
-  background-color: #5B6CFF;
+  background-color: #059669;
 }
 
 .pulse-gradient-text {
-  color: #5B6CFF;
+  color: #10B981;
 }
 
-/* Glassmorphism & Translucent Layers */
+/* Solid Header & Action Bars (No Glassmorphism) */
 .glass-header {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: #FFFFFF;
 }
 
 html.dark .glass-header {
-  background: rgba(38, 44, 49, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: #262C31;
 }
 
 /* Custom Minimal Scrollbars */
@@ -199,11 +194,9 @@ html.dark ::-webkit-scrollbar-thumb:hover {
   background: #475569;
 }
 
-/* Glass Call Action Bar (Borderless) */
+/* Solid Call Action Bar */
 .call-glass-bar {
-  background: rgba(15, 23, 42, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: #0F172A;
 }
 
 .animate-ring-pulse {
@@ -330,7 +323,7 @@ html.dark ::-webkit-scrollbar-thumb:hover {
 }
 
 .pc-gradient-text {
-  background: linear-gradient(135deg, #6366F1 0%, #38BDF8 50%, #34D399 100%);
+  background: linear-gradient(135deg, #10B981 0%, #34D399 50%, #059669 100%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -338,7 +331,7 @@ html.dark ::-webkit-scrollbar-thumb:hover {
 }
 
 .pc-gradient-text-emerald {
-  background: linear-gradient(135deg, #34D399 0%, #10B981 50%, #06B6D4 100%);
+  background: linear-gradient(135deg, #34D399 0%, #10B981 50%, #059669 100%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -372,11 +365,11 @@ html.dark ::-webkit-scrollbar-thumb:hover {
 
 .pc-card-3d:hover {
   transform: translateY(-6px) scale(1.02);
-  box-shadow: 0 20px 40px -15px rgba(99, 102, 241, 0.18);
+  box-shadow: 0 20px 40px -15px rgba(16, 185, 129, 0.18);
 }
 
 html.dark .pc-card-3d:hover {
-  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5), 0 0 20px 1px rgba(99, 102, 241, 0.2);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5), 0 0 20px 1px rgba(16, 185, 129, 0.2);
 }
 
 .pc-glow-orb {
@@ -384,7 +377,7 @@ html.dark .pc-card-3d:hover {
 }
 
 .pc-grid-bg {
-  background-image: radial-gradient(rgba(99, 102, 241, 0.12) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(16, 185, 129, 0.12) 1px, transparent 1px);
   background-size: 32px 32px;
 }
 
@@ -404,4 +397,21 @@ html.dark .pc-grid-bg {
     transform: none;
     animation: none !important;
   }
+}
+
+/* ── Kinetic Marquee Ticker ───────────────────────────────────────── */
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  display: flex;
+  width: 200%;
+  animation: marquee 25s linear infinite;
 }

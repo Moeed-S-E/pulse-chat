@@ -73,7 +73,7 @@ export default function ChannelItem({
     <div
       onClick={onClick}
       className={`p-3 rounded-2xl cursor-pointer transition-all flex items-center space-x-3 group ${isSelected
-        ? 'bg-indigo-50/90 dark:bg-indigo-950/80 shadow-sm'
+        ? 'bg-emerald-50/90 dark:bg-emerald-950/80 shadow-sm'
         : 'hover:bg-slate-100/70 dark:hover:bg-slate-800/60'
         }`}
     >
@@ -88,7 +88,7 @@ export default function ChannelItem({
             size="md"
           />
         ) : (
-          <div className="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-pulse-blue font-bold text-sm shrink-0">
+          <div className="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-emerald-600 font-bold text-sm shrink-0">
             <Hash className="w-5 h-5" />
           </div>
         )}
@@ -110,7 +110,7 @@ export default function ChannelItem({
         <div className="flex items-center justify-between">
           <p className="text-xs font-medium text-slate-500 dark:text-slate-400 truncate flex items-center space-x-1">
             {isSentByMe && (
-              <CheckCheck className="w-3.5 h-3.5 text-pulse-blue shrink-0 inline mr-1" />
+              <CheckCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0 inline mr-1" />
             )}
             {channel.lastMessage?.messageType === 'image' && (
               <Camera className="w-3.5 h-3.5 text-slate-400 inline mr-1 shrink-0" />

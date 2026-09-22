@@ -51,14 +51,14 @@ const VideoTile = ({ stream, isLocal, name, username, isMuted, isCameraOff, clas
         <div className="flex flex-col items-center justify-center p-6 text-center z-10">
           <Avatar name={name || 'Participant'} size="xl" />
           <p className="mt-3 font-bold text-base text-slate-100">{name}</p>
-          {username && <p className="text-xs text-indigo-400 font-mono">@{username}</p>}
+          {username && <p className="text-xs text-emerald-400 font-mono">@{username}</p>}
         </div>
       )}
 
       {/* Overlay Badge */}
-      <div className="absolute bottom-4 left-4 z-20 bg-slate-950/80 backdrop-blur-md px-3.5 py-1.5 rounded-2xl text-xs text-slate-200 border border-slate-800 flex items-center gap-2 shadow-lg">
+      <div className="absolute bottom-4 left-4 z-20 bg-slate-950 px-3.5 py-1.5 rounded-2xl text-xs text-slate-200 border border-slate-800 flex items-center gap-2 shadow-lg">
         <span className="font-bold truncate max-w-32">{isLocal ? 'You' : name}</span>
-        {username && <span className="text-[11px] text-indigo-400 font-mono">@{username}</span>}
+        {username && <span className="text-[11px] text-emerald-400 font-mono">@{username}</span>}
         {isMuted ? (
           <span className="px-1.5 py-0.5 rounded-md bg-rose-500/20 text-rose-400 text-[10px] font-bold">Muted</span>
         ) : (
@@ -183,14 +183,14 @@ export default function ActiveCallOverlay() {
   /* ── 1. Floating Minimized Picture-in-Picture Bar (when !isFullScreen) ── */
   if (!isFullScreen) {
     return (
-      <div className="fixed bottom-6 right-6 z-50 bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl p-3 shadow-2xl flex items-center space-x-3.5 animate-fade-in text-slate-100 max-w-md">
+      <div className="fixed bottom-6 right-6 z-50 bg-slate-900 border border-slate-700 rounded-2xl p-3 shadow-2xl flex items-center space-x-3.5 animate-fade-in text-slate-100 max-w-md">
         <div className="relative shrink-0">
           <div className="w-3.5 h-3.5 rounded-full bg-emerald-500 animate-pulse" />
         </div>
 
         <div className="min-w-0 flex-1">
           <div className="text-xs font-bold truncate text-slate-100">{calleeName}</div>
-          <div className="text-[11px] font-mono text-cyan-400 font-semibold">{callDuration}</div>
+          <div className="text-[11px] font-mono text-emerald-400 font-semibold">{callDuration}</div>
         </div>
 
         <div className="flex items-center space-x-1.5 shrink-0">
@@ -218,7 +218,7 @@ export default function ActiveCallOverlay() {
             type="button"
             onClick={() => setIsFullScreen(true)}
             title="Expand Full Screen"
-            className="p-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center space-x-1 cursor-pointer transition-colors shadow-md"
+            className="p-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center space-x-1 cursor-pointer transition-colors shadow-md"
           >
             <Maximize2 className="w-4 h-4" />
             <span className="hidden sm:inline">Expand</span>
@@ -239,7 +239,7 @@ export default function ActiveCallOverlay() {
 
   /* ── 2. Full-Screen Active Call Overlay ───────────────────────────────── */
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-2xl flex flex-col p-4 md:p-6 animate-fade-in">
+    <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col p-4 md:p-6 animate-fade-in">
       {/* Invite Participants Modal */}
       <Modal
         isOpen={isInviteModalOpen}
@@ -251,7 +251,7 @@ export default function ActiveCallOverlay() {
           <div className="p-3 bg-slate-900 rounded-2xl border border-slate-800 flex items-center justify-between">
             <div>
               <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Meeting Room Code</div>
-              <div className="text-sm font-mono font-bold text-cyan-400">{callInfo?.roomCode || 'PULSE-8821'}</div>
+              <div className="text-sm font-mono font-bold text-emerald-400">{callInfo?.roomCode || 'PULSE-8821'}</div>
             </div>
             <Button onClick={handleCopyCode} variant="secondary" size="sm" className="rounded-xl">
               {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -326,7 +326,7 @@ export default function ActiveCallOverlay() {
           {/* Add Participant Button */}
           <button
             onClick={() => setIsInviteModalOpen(true)}
-            className="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
+            className="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
             title="Invite People to Call"
           >
             <UserPlus className="w-4 h-4" />
@@ -337,14 +337,14 @@ export default function ActiveCallOverlay() {
           <div className="flex bg-slate-900 border border-slate-800 p-1 rounded-xl text-xs font-semibold">
             <button
               onClick={() => setViewMode('voice')}
-              className={`px-3 py-1.5 rounded-lg transition-all ${isVoiceView ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
+              className={`px-3 py-1.5 rounded-lg transition-all ${isVoiceView ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
                 }`}
             >
               Voice Screen
             </button>
             <button
               onClick={() => setViewMode('video')}
-              className={`px-3 py-1.5 rounded-lg transition-all ${!isVoiceView ? 'bg-cyan-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
+              className={`px-3 py-1.5 rounded-lg transition-all ${!isVoiceView ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
                 }`}
             >
               Video Grid
@@ -368,26 +368,26 @@ export default function ActiveCallOverlay() {
         {isVoiceView ? (
           /* FULL SCREEN VOICE CALL PREVIEW */
           <div className="flex flex-col items-center justify-center text-center p-8 bg-slate-900/60 rounded-3xl border border-slate-800/80 max-w-lg w-full shadow-2xl relative overflow-hidden">
-            <div className="absolute w-72 h-72 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none animate-pulse"></div>
+            <div className="absolute w-72 h-72 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none animate-pulse"></div>
 
             <div className="relative mb-6">
-              <div className="w-36 h-36 md:w-44 md:h-44 rounded-full pulse-gradient-bg flex items-center justify-center text-white text-5xl font-black shadow-2xl shadow-cyan-500/20 border-4 border-slate-800">
+              <div className="w-36 h-36 md:w-44 md:h-44 rounded-full pulse-gradient-bg flex items-center justify-center text-white text-5xl font-black shadow-2xl shadow-emerald-500/20 border-4 border-slate-800">
                 {calleeName.charAt(0).toUpperCase()}
               </div>
-              <div className="absolute inset-0 rounded-full border-2 border-cyan-400/50 animate-ping opacity-60"></div>
+              <div className="absolute inset-0 rounded-full border-2 border-emerald-400/50 animate-ping opacity-60"></div>
             </div>
 
             <h3 className="font-extrabold text-2xl text-slate-100">{calleeName}</h3>
             {calleeUsername && (
-              <p className="text-sm text-cyan-400 font-mono mt-1">@{calleeUsername}</p>
+              <p className="text-sm text-emerald-400 font-mono mt-1">@{calleeUsername}</p>
             )}
 
             <div className="flex items-center gap-1.5 my-5">
-              <span className="w-1.5 h-6 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-              <span className="w-1.5 h-9 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+              <span className="w-1.5 h-6 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+              <span className="w-1.5 h-9 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
               <span className="w-1.5 h-12 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
-              <span className="w-1.5 h-8 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '450ms' }}></span>
-              <span className="w-1.5 h-5 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '600ms' }}></span>
+              <span className="w-1.5 h-8 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '450ms' }}></span>
+              <span className="w-1.5 h-5 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '600ms' }}></span>
             </div>
 
             <p className="text-xs font-semibold text-slate-400 tracking-wide uppercase">
@@ -425,9 +425,9 @@ export default function ActiveCallOverlay() {
             {/* Waiting for peers message if only local stream in room */}
             {remoteStreams.length === 0 && callInfo?.isRoomCall && (
               <div className="bg-slate-900/40 rounded-3xl border border-dashed border-slate-800 flex flex-col items-center justify-center p-6 text-center w-full h-full">
-                <Users className="w-10 h-10 text-cyan-400/60 mb-2 animate-bounce" />
+                <Users className="w-10 h-10 text-emerald-400/60 mb-2 animate-bounce" />
                 <p className="text-sm font-semibold text-slate-300">Waiting for participants to join...</p>
-                <p className="text-xs text-slate-500 mt-1">Share code <span className="font-mono text-cyan-400">{callInfo.roomCode}</span> to invite others.</p>
+                <p className="text-xs text-slate-500 mt-1">Share code <span className="font-mono text-emerald-400">{callInfo.roomCode}</span> to invite others.</p>
               </div>
             )}
           </div>
@@ -466,7 +466,7 @@ export default function ActiveCallOverlay() {
         {/* Add Participant Button */}
         <button
           onClick={() => setIsInviteModalOpen(true)}
-          className="p-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-500/40 transition-all cursor-pointer shadow-lg flex items-center gap-2"
+          className="p-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-500/40 transition-all cursor-pointer shadow-lg flex items-center gap-2"
           title="Add Participant"
         >
           <UserPlus className="w-5 h-5" />

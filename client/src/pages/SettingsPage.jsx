@@ -23,7 +23,7 @@ export default function SettingsPage() {
   const [name, setName] = useState(user?.name || '');
   const [username, setUsername] = useState(user?.username || '');
   const [bio, setBio] = useState(user?.bio || '');
-  const [avatarColor, setAvatarColor] = useState(user?.avatarColor || 'indigo');
+  const [avatarColor, setAvatarColor] = useState(user?.avatarColor || 'emerald');
 
   // Preference States
   const [showOnline, setShowOnline] = useState(user?.showOnline !== false);
@@ -37,12 +37,12 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false);
 
   const avatarColors = [
-    { id: 'indigo', name: 'Royal Indigo', bg: 'bg-indigo-600', ring: 'ring-indigo-500' },
     { id: 'emerald', name: 'Emerald Green', bg: 'bg-emerald-600', ring: 'ring-emerald-500' },
+    { id: 'teal', name: 'Teal Forest', bg: 'bg-teal-600', ring: 'ring-teal-500' },
     { id: 'rose', name: 'Crimson Rose', bg: 'bg-rose-600', ring: 'ring-rose-500' },
     { id: 'amber', name: 'Amber Gold', bg: 'bg-amber-500', ring: 'ring-amber-400' },
-    { id: 'cyan', name: 'Ocean Cyan', bg: 'bg-cyan-600', ring: 'ring-cyan-500' },
-    { id: 'violet', name: 'Deep Purple', bg: 'bg-violet-600', ring: 'ring-violet-500' },
+    { id: 'teal', name: 'Deep Teal', bg: 'bg-teal-700', ring: 'ring-teal-600' },
+    { id: 'green', name: 'WhatsApp Green', bg: 'bg-green-600', ring: 'ring-green-500' },
   ];
 
   const handleSubmit = async (e) => {
@@ -86,7 +86,7 @@ export default function SettingsPage() {
                 <h1 className="text-xl font-black tracking-tight text-slate-900 dark:text-slate-50">
                   Settings & Preferences
                 </h1>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950/80 text-pulse-blue border border-indigo-100 dark:border-indigo-900/60">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 border border-emerald-100 dark:border-emerald-900/60">
                   PRO
                 </span>
               </div>
@@ -132,7 +132,7 @@ export default function SettingsPage() {
                 type="button"
                 onClick={() => setActiveTab('profile')}
                 className={`w-full flex items-center space-x-3 px-3.5 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${activeTab === 'profile'
-                  ? 'bg-pulse-blue text-white shadow-md shadow-indigo-500/20'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-500/20'
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60'
                   }`}
               >
@@ -144,7 +144,7 @@ export default function SettingsPage() {
                 type="button"
                 onClick={() => setActiveTab('appearance')}
                 className={`w-full flex items-center space-x-3 px-3.5 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${activeTab === 'appearance'
-                  ? 'bg-pulse-blue text-white shadow-md shadow-indigo-500/20'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-500/20'
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60'
                   }`}
               >
@@ -156,7 +156,7 @@ export default function SettingsPage() {
                 type="button"
                 onClick={() => setActiveTab('security')}
                 className={`w-full flex items-center space-x-3 px-3.5 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${activeTab === 'security'
-                  ? 'bg-pulse-blue text-white shadow-md shadow-indigo-500/20'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-500/20'
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60'
                   }`}
               >
@@ -168,7 +168,7 @@ export default function SettingsPage() {
                 type="button"
                 onClick={() => setActiveTab('notifications')}
                 className={`w-full flex items-center space-x-3 px-3.5 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${activeTab === 'notifications'
-                  ? 'bg-pulse-blue text-white shadow-md shadow-indigo-500/20'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-500/20'
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60'
                   }`}
               >
@@ -179,8 +179,8 @@ export default function SettingsPage() {
             </div>
 
             {/* Account Quick Badge Card */}
-            <div className="hidden md:block p-4 rounded-3xl bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/40 text-center space-y-2">
-              <div className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-white dark:bg-indigo-900/60 text-pulse-blue text-[11px] font-bold shadow-xs">
+            <div className="hidden md:block p-4 rounded-3xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/40 text-center space-y-2">
+              <div className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-white dark:bg-emerald-900/60 text-emerald-600 text-[11px] font-bold shadow-xs">
                 <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                 <span>AES-256 E2EE Enabled</span>
               </div>
@@ -223,7 +223,7 @@ export default function SettingsPage() {
                           className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-md flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-700 transition-all cursor-pointer"
                           title="Change Profile Photo"
                         >
-                          <Camera className="w-4 h-4 text-pulse-blue" />
+                          <Camera className="w-4 h-4 text-emerald-600" />
                         </button>
                       </div>
 
@@ -264,7 +264,7 @@ export default function SettingsPage() {
                       <div>
                         <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
                           <span>Username Handle</span>
-                          <span className="text-[10px] font-bold text-pulse-blue bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-full border border-indigo-100 dark:border-indigo-900/60">
+                          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-100 dark:border-emerald-900/60">
                             Unique ID
                           </span>
                         </label>
@@ -274,12 +274,12 @@ export default function SettingsPage() {
                             type="text"
                             value={username}
                             onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-                            className="w-full pl-10 pr-4 py-2.5 bg-slate-100/70 dark:bg-pulse-dark-bg border border-transparent dark:border-slate-800 rounded-2xl text-xs font-semibold text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:bg-white dark:focus:bg-[#111827] focus:border-pulse-blue transition-all"
+                            className="w-full pl-10 pr-4 py-2.5 bg-slate-100/70 dark:bg-pulse-dark-bg border border-transparent dark:border-slate-800 rounded-2xl text-xs font-semibold text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:bg-white dark:focus:bg-[#111827] focus:border-emerald-500 transition-all"
                             placeholder="username"
                           />
                         </div>
                         <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                          Direct handle for friends to search & video call: <span className="font-bold text-pulse-blue">@{username || 'handle'}</span>
+                          Direct handle for friends to search & video call: <span className="font-bold text-emerald-600">@{username || 'handle'}</span>
                         </p>
                       </div>
 
@@ -321,12 +321,12 @@ export default function SettingsPage() {
                         type="button"
                         onClick={() => setTheme('dark')}
                         className={`p-4 rounded-2xl border text-left transition-all flex items-start justify-between cursor-pointer ${theme === 'dark'
-                          ? 'bg-slate-900 dark:bg-indigo-950/80 border-pulse-blue text-white shadow-md ring-1 ring-pulse-blue'
+                          ? 'bg-slate-900 dark:bg-emerald-950/80 border-emerald-500 text-white shadow-md ring-1 ring-emerald-500'
                           : 'bg-slate-50 dark:bg-pulse-dark-bg border-slate-200/80 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300'
                           }`}
                       >
                         <div className="flex items-start space-x-3">
-                          <div className="w-10 h-10 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-indigo-400 shrink-0">
+                          <div className="w-10 h-10 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-emerald-400 shrink-0">
                             <Moon className="w-5 h-5" />
                           </div>
                           <div>
@@ -337,7 +337,7 @@ export default function SettingsPage() {
                           </div>
                         </div>
                         {theme === 'dark' && (
-                          <div className="w-5 h-5 rounded-full bg-pulse-blue text-white flex items-center justify-center">
+                          <div className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center">
                             <Check className="w-3.5 h-3.5 stroke-[3]" />
                           </div>
                         )}
@@ -348,7 +348,7 @@ export default function SettingsPage() {
                         type="button"
                         onClick={() => setTheme('light')}
                         className={`p-4 rounded-2xl border text-left transition-all flex items-start justify-between cursor-pointer ${theme === 'light'
-                          ? 'bg-white border-pulse-blue text-slate-900 shadow-md ring-1 ring-pulse-blue/40'
+                          ? 'bg-white border-emerald-500 text-slate-900 shadow-md ring-1 ring-emerald-500/40'
                           : 'bg-slate-50 dark:bg-pulse-dark-bg border-slate-200/80 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300'
                           }`}
                       >
@@ -364,7 +364,7 @@ export default function SettingsPage() {
                           </div>
                         </div>
                         {theme === 'light' && (
-                          <div className="w-5 h-5 rounded-full bg-pulse-blue text-white flex items-center justify-center">
+                          <div className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center">
                             <Check className="w-3.5 h-3.5 stroke-[3]" />
                           </div>
                         )}
@@ -374,7 +374,7 @@ export default function SettingsPage() {
 
                     <div className="p-4 rounded-2xl bg-slate-50/70 dark:bg-pulse-dark-bg border border-slate-200/60 dark:border-slate-800/80 flex items-center justify-between">
                       <div className="flex items-center space-x-3">
-                        <Sparkles className="w-5 h-5 text-pulse-blue" />
+                        <Sparkles className="w-5 h-5 text-emerald-600" />
                         <div>
                           <h5 className="text-xs font-bold text-slate-900 dark:text-slate-100">Clean Monochrome Backgrounds</h5>
                           <p className="text-[11px] text-slate-500 dark:text-slate-400">Pure gradient-free canvas applied across all views</p>
@@ -400,15 +400,15 @@ export default function SettingsPage() {
                     </div>
 
                     {/* E2EE Status Card */}
-                    <div className="p-5 rounded-2xl bg-gradient-to-r from-slate-900 to-indigo-950 text-white border border-indigo-900/60 shadow-md space-y-3">
+                    <div className="p-5 rounded-2xl bg-gradient-to-r from-slate-900 to-emerald-950 text-white border border-emerald-900/60 shadow-md space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2.5">
-                          <div className="w-9 h-9 rounded-xl bg-indigo-600/30 border border-indigo-400/40 flex items-center justify-center text-indigo-300">
+                          <div className="w-9 h-9 rounded-xl bg-emerald-600/30 border border-emerald-400/40 flex items-center justify-center text-emerald-300">
                             <ShieldCheck className="w-5 h-5" />
                           </div>
                           <div>
                             <h4 className="text-xs font-black tracking-wide text-white">End-to-End Encryption (E2EE)</h4>
-                            <p className="text-[11px] text-indigo-200">AES-256 GCM client-side cryptography</p>
+                            <p className="text-[11px] text-emerald-200">AES-256 GCM client-side cryptography</p>
                           </div>
                         </div>
                         <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
@@ -420,9 +420,9 @@ export default function SettingsPage() {
                         Messages & media standard payloads are encrypted locally prior to server transport. Only participants with session keys can decrypt content.
                       </p>
 
-                      <div className="pt-2 border-t border-indigo-900/80 flex items-center justify-between text-[11px] text-indigo-300">
+                      <div className="pt-2 border-t border-emerald-900/80 flex items-center justify-between text-[11px] text-emerald-300">
                         <span className="flex items-center space-x-1">
-                          <Key className="w-3.5 h-3.5 text-indigo-400" />
+                          <Key className="w-3.5 h-3.5 text-emerald-400" />
                           <span>Local RSA/AES Subsystem Active</span>
                         </span>
                         <button
@@ -468,7 +468,7 @@ export default function SettingsPage() {
                         <button
                           type="button"
                           onClick={() => setReadReceipts(!readReceipts)}
-                          className={`w-11 h-6 rounded-full transition-colors cursor-pointer relative p-0.5 ${readReceipts ? 'bg-pulse-blue' : 'bg-slate-300 dark:bg-slate-700'
+                          className={`w-11 h-6 rounded-full transition-colors cursor-pointer relative p-0.5 ${readReceipts ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'
                             }`}
                         >
                           <div className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform ${readReceipts ? 'translate-x-5' : 'translate-x-0'
@@ -494,7 +494,7 @@ export default function SettingsPage() {
                     <div className="space-y-3">
                       <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50/70 dark:bg-pulse-dark-bg border border-slate-200/60 dark:border-slate-800/80">
                         <div className="flex items-center space-x-3">
-                          <Bell className="w-4 h-4 text-pulse-blue" />
+                          <Bell className="w-4 h-4 text-emerald-600" />
                           <div>
                             <h5 className="text-xs font-bold text-slate-900 dark:text-slate-100">Incoming Call Ringtones</h5>
                             <p className="text-[11px] text-slate-500 dark:text-slate-400">Play audio alerts when someone calls @{username}</p>
@@ -503,7 +503,7 @@ export default function SettingsPage() {
                         <button
                           type="button"
                           onClick={() => setCallAlerts(!callAlerts)}
-                          className={`w-11 h-6 rounded-full transition-colors cursor-pointer relative p-0.5 ${callAlerts ? 'bg-pulse-blue' : 'bg-slate-300 dark:bg-slate-700'
+                          className={`w-11 h-6 rounded-full transition-colors cursor-pointer relative p-0.5 ${callAlerts ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'
                             }`}
                         >
                           <div className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform ${callAlerts ? 'translate-x-5' : 'translate-x-0'
@@ -522,7 +522,7 @@ export default function SettingsPage() {
                         <button
                           type="button"
                           onClick={() => setSoundEffects(!soundEffects)}
-                          className={`w-11 h-6 rounded-full transition-colors cursor-pointer relative p-0.5 ${soundEffects ? 'bg-pulse-blue' : 'bg-slate-300 dark:bg-slate-700'
+                          className={`w-11 h-6 rounded-full transition-colors cursor-pointer relative p-0.5 ${soundEffects ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'
                             }`}
                         >
                           <div className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform ${soundEffects ? 'translate-x-5' : 'translate-x-0'

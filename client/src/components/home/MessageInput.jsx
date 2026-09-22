@@ -72,7 +72,7 @@ export default function MessageInput({
           type="button"
           onClick={handlePaperclipClick}
           title="Share an Image (Max 15 MB)"
-          className="p-2 text-slate-500 dark:text-[#B0BEC5] hover:text-pulse-blue rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative cursor-pointer"
+          className="p-2 text-slate-500 dark:text-[#B0BEC5] hover:text-emerald-600 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative cursor-pointer"
         >
           <Paperclip className="w-5 h-5" />
         </button>
@@ -82,14 +82,14 @@ export default function MessageInput({
           value={inputText}
           onChange={onInputChange}
           placeholder="Type a message..."
-          className="flex-1 py-3 px-4 bg-slate-100 dark:bg-[#1E2429] border border-slate-200 dark:border-[#2D353B] rounded-full text-sm font-medium text-slate-900 dark:text-[#EEF2F5] placeholder:text-slate-400 dark:placeholder:text-[#9AA8B2] focus:outline-none focus:border-pulse-blue"
+          className="flex-1 py-3 px-4 bg-slate-100 dark:bg-[#1E2429] border border-slate-200 dark:border-[#2D353B] rounded-full text-sm font-medium text-slate-900 dark:text-[#EEF2F5] placeholder:text-slate-400 dark:placeholder:text-[#9AA8B2] focus:outline-none focus:border-emerald-500"
         />
 
         {/* Send Button */}
         <button
           type="submit"
           disabled={!inputText.trim()}
-          className="w-10 h-10 rounded-full pulse-gradient-bg text-white flex items-center justify-center shadow-md shadow-pulse-blue/30 hover:opacity-95 active:scale-95 transition-all disabled:opacity-40 cursor-pointer"
+          className="w-10 h-10 rounded-full pulse-gradient-bg text-white flex items-center justify-center shadow-md shadow-emerald-500/30 hover:opacity-95 active:scale-95 transition-all disabled:opacity-40 cursor-pointer"
         >
           <Send className="w-4 h-4" />
         </button>

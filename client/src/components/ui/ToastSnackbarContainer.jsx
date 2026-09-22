@@ -12,7 +12,7 @@ const ToastSnackbarContainer = () => {
     <div className="fixed top-4 right-4 z-50 flex flex-col gap-3 max-w-sm w-full pointer-events-none">
       {/* --- OUTGOING CALL RINGING SNACKBAR --- */}
       {callState === 'outgoing' && callInfo && (
-        <div className="pointer-events-auto bg-slate-900/95 backdrop-blur-xl border border-cyan-500/50 shadow-2xl shadow-cyan-500/20 rounded-2xl p-4 flex flex-col gap-3 animate-fade-in">
+        <div className="pointer-events-auto bg-slate-900 border border-emerald-500/50 shadow-2xl shadow-emerald-500/20 rounded-2xl p-4 flex flex-col gap-3 animate-fade-in">
           <div className="flex items-center gap-3">
             <div className="relative">
               <Avatar
@@ -22,8 +22,8 @@ const ToastSnackbarContainer = () => {
                 size="md"
               />
               <span className="absolute -bottom-1 -right-1 flex h-4 w-4">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-4 w-4 bg-cyan-500"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500"></span>
               </span>
             </div>
             <div className="flex-1 min-w-0">
@@ -32,12 +32,12 @@ const ToastSnackbarContainer = () => {
                   {callInfo.calleeInfo?.name || 'User'}
                 </h4>
                 {callInfo.calleeInfo?.username && (
-                  <span className="text-xs text-cyan-400 font-mono">
+                  <span className="text-xs text-emerald-400 font-mono">
                     @{callInfo.calleeInfo.username}
                   </span>
                 )}
               </div>
-              <p className="text-xs text-cyan-300 flex items-center gap-1 mt-0.5 animate-pulse">
+              <p className="text-xs text-emerald-300 flex items-center gap-1 mt-0.5 animate-pulse">
                 Ringing recipient...
               </p>
             </div>
@@ -46,7 +46,7 @@ const ToastSnackbarContainer = () => {
           <div className="flex items-center gap-2 pt-1 border-t border-slate-800/80">
             <button
               onClick={() => setIsFullScreen(true)}
-              className="flex-1 bg-indigo-600/30 hover:bg-indigo-600 text-indigo-200 hover:text-white border border-indigo-500/40 text-xs font-semibold py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              className="flex-1 bg-emerald-600/30 hover:bg-emerald-600 text-emerald-200 hover:text-white border border-emerald-500/40 text-xs font-semibold py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
@@ -64,7 +64,7 @@ const ToastSnackbarContainer = () => {
       )}
       {/* --- INCOMING CALL SNACKBAR --- */}
       {callState === 'incoming' && callInfo && (
-        <div className="pointer-events-auto bg-slate-900/95 backdrop-blur-xl border border-cyan-500/50 shadow-2xl shadow-cyan-500/20 rounded-2xl p-4 animate-bounce-short flex flex-col gap-3">
+        <div className="pointer-events-auto bg-slate-900 border border-emerald-500/50 shadow-2xl shadow-emerald-500/20 rounded-2xl p-4 animate-bounce-short flex flex-col gap-3">
           <div className="flex items-center gap-3">
             <div className="relative">
               <Avatar
@@ -84,7 +84,7 @@ const ToastSnackbarContainer = () => {
                   {callInfo.callerInfo?.name || 'Caller'}
                 </h4>
                 {callInfo.callerInfo?.username && (
-                  <span className="text-xs text-cyan-400 font-mono">
+                  <span className="text-xs text-emerald-400 font-mono">
                     @{callInfo.callerInfo.username}
                   </span>
                 )}
@@ -126,11 +126,11 @@ const ToastSnackbarContainer = () => {
         return (
           <div
             key={toast.id}
-            className={`pointer-events-auto flex items-center justify-between gap-3 px-4 py-3 rounded-xl border text-xs font-medium shadow-xl backdrop-blur-md transition-all animate-fade-in ${isSuccess
-              ? 'bg-emerald-950/90 border-emerald-500/40 text-emerald-200'
+            className={`pointer-events-auto flex items-center justify-between gap-3 px-4 py-3 rounded-xl border text-xs font-medium shadow-xl transition-all animate-fade-in ${isSuccess
+              ? 'bg-emerald-950 border-emerald-500/40 text-emerald-200'
               : isError
-                ? 'bg-rose-950/90 border-rose-500/40 text-rose-200'
-                : 'bg-slate-900/90 border-cyan-500/40 text-slate-200'
+                ? 'bg-rose-950 border-rose-500/40 text-rose-200'
+                : 'bg-slate-900 border-emerald-500/40 text-slate-200'
               }`}
           >
             <div className="flex items-center gap-2.5">
@@ -145,7 +145,7 @@ const ToastSnackbarContainer = () => {
                 </svg>
               )}
               {!isSuccess && !isError && (
-                <svg className="w-4 h-4 text-cyan-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               )}
@@ -160,7 +160,7 @@ const ToastSnackbarContainer = () => {
           </div>
         );
       })}
-    </div>
+      ,    </div>
   );
 };
 

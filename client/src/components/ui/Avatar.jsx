@@ -24,15 +24,14 @@ export default function Avatar({
   };
 
   const colorMap = {
-    indigo: 'bg-indigo-600',
     emerald: 'bg-emerald-600',
     rose: 'bg-rose-600',
     amber: 'bg-amber-500',
-    cyan: 'bg-cyan-600',
-    violet: 'bg-violet-600',
+    teal: 'bg-teal-600',
+    green: 'bg-green-600',
   };
 
-  const bgClass = colorMap[avatarColor] || 'bg-pulse-blue';
+  const bgClass = colorMap[avatarColor] || 'bg-emerald-600';
   const displayInitial = initial || (name ? name.charAt(0).toUpperCase() : 'P');
 
   return (

@@ -241,7 +241,7 @@ export default function ChatView({ channel, channels = [], onBack }) {
   if (!channel) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-[#F7F8FA] dark:bg-pulse-dark-bg p-8 text-center transition-colors">
-        <div className="w-16 h-16 rounded-3xl pulse-gradient-bg flex items-center justify-center text-white shadow-xl shadow-pulse-blue/20 mb-4 animate-pulse">
+        <div className="w-16 h-16 rounded-3xl pulse-gradient-bg flex items-center justify-center text-white shadow-xl shadow-emerald-500/20 mb-4 animate-pulse">
           <Activity className="w-8 h-8" />
         </div>
         <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">Select a Conversation</h3>

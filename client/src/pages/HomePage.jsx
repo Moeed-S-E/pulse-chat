@@ -337,7 +337,7 @@ export default function HomePage() {
                 {selectedMembers.map((m) => (
                   <span
                     key={m._id}
-                    className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full bg-indigo-950/60 border border-indigo-800 text-indigo-300 text-xs font-bold"
+                    className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full bg-emerald-950/60 border border-emerald-800 text-emerald-300 text-xs font-bold"
                   >
                     <span>@{m.username}</span>
                     <button
@@ -359,7 +359,7 @@ export default function HomePage() {
                 value={memberSearchQuery}
                 onChange={(e) => setMemberSearchQuery(e.target.value)}
                 placeholder="Search users by @username to add..."
-                className="w-full pl-9 pr-4 py-2 bg-[#0B0F19] border border-slate-800 rounded-2xl text-xs font-semibold text-slate-100 placeholder:text-slate-500 focus:outline-none focus:bg-[#111827] focus:border-pulse-blue"
+                className="w-full pl-9 pr-4 py-2 bg-[#0B0F19] border border-slate-800 rounded-2xl text-xs font-semibold text-slate-100 placeholder:text-slate-500 focus:outline-none focus:bg-[#111827] focus:border-emerald-500"
               />
             </div>
 
@@ -380,7 +380,7 @@ export default function HomePage() {
                     <div
                       key={u._id}
                       onClick={() => toggleMemberSelection(u)}
-                      className={`flex items-center justify-between p-2 rounded-xl cursor-pointer transition-all ${isSelected ? 'bg-indigo-950/80' : 'hover:bg-slate-800/50'
+                      className={`flex items-center justify-between p-2 rounded-xl cursor-pointer transition-all ${isSelected ? 'bg-emerald-950/80' : 'hover:bg-slate-800/50'
                         }`}
                     >
                       <div className="flex items-center space-x-2">
@@ -394,7 +394,7 @@ export default function HomePage() {
                       </div>
                       <div
                         className={`w-5 h-5 rounded-full flex items-center justify-center border ${isSelected
-                          ? 'bg-pulse-blue border-pulse-blue text-white'
+                          ? 'bg-emerald-600 border-emerald-500 text-white'
                           : 'border-slate-700 text-transparent'
                           }`}
                       >

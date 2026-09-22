@@ -49,10 +49,10 @@ const JoinCallSnackbar = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div className="fixed top-16 right-6 z-40 w-84 bg-white/95 dark:bg-[#1E293B]/95 backdrop-blur-xl border border-slate-200/80 dark:border-slate-700/60 shadow-xl rounded-3xl p-5 text-slate-900 dark:text-slate-100 animate-fade-in">
+    <div className="fixed top-16 right-6 z-40 w-84 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 shadow-xl rounded-3xl p-5 text-slate-900 dark:text-slate-100 animate-fade-in">
       <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-        <h3 className="font-extrabold text-sm text-pulse-blue flex items-center gap-2">
-          <svg className="w-4 h-4 text-pulse-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <h3 className="font-extrabold text-sm text-emerald-600 flex items-center gap-2">
+          <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
           </svg>
           Quick Video Call
@@ -70,7 +70,7 @@ const JoinCallSnackbar = ({ isOpen, onClose }) => {
         <button
           onClick={() => setActiveTab('username')}
           className={`flex-1 py-1.5 rounded-xl transition-all ${activeTab === 'username'
-            ? 'bg-white dark:bg-[#1E293B] text-pulse-blue dark:text-[#7C8BFF] shadow-sm font-bold'
+            ? 'bg-white dark:bg-[#1E293B] text-emerald-600 dark:text-emerald-400 shadow-sm font-bold'
             : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
         >
@@ -79,7 +79,7 @@ const JoinCallSnackbar = ({ isOpen, onClose }) => {
         <button
           onClick={() => setActiveTab('code')}
           className={`flex-1 py-1.5 rounded-xl transition-all ${activeTab === 'code'
-            ? 'bg-white dark:bg-[#1E293B] text-pulse-blue dark:text-[#7C8BFF] shadow-sm font-bold'
+            ? 'bg-white dark:bg-[#1E293B] text-emerald-600 dark:text-emerald-400 shadow-sm font-bold'
             : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
         >
@@ -99,13 +99,13 @@ const JoinCallSnackbar = ({ isOpen, onClose }) => {
               placeholder="e.g. samuel"
               value={usernameInput}
               onChange={(e) => setUsernameInput(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-pulse-dark-bg border border-slate-200 dark:border-slate-800 focus:border-pulse-blue focus:ring-4 focus:ring-pulse-blue/10 rounded-2xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-slate-100 outline-none transition-all placeholder:text-slate-400 font-medium"
+              className="w-full bg-slate-50 dark:bg-pulse-dark-bg border border-slate-200 dark:border-slate-800 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 rounded-2xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-slate-100 outline-none transition-all placeholder:text-slate-400 font-medium"
             />
           </div>
           <button
             type="submit"
             disabled={loading || !usernameInput.trim()}
-            className="w-full bg-pulse-blue hover:bg-[#4B5CEE] disabled:opacity-50 text-white font-bold py-2.5 rounded-2xl text-xs shadow-md shadow-pulse-blue/20 active:scale-98 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+            className="w-full bg-emerald-600 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold py-2.5 rounded-2xl text-xs shadow-md shadow-emerald-500/20 active:scale-98 transition-all cursor-pointer flex items-center justify-center gap-1.5"
           >
             {loading ? 'Resolving User...' : 'Start Direct Video Call'}
           </button>
@@ -124,13 +124,13 @@ const JoinCallSnackbar = ({ isOpen, onClose }) => {
               placeholder="e.g. PULSE-8821"
               value={roomCodeInput}
               onChange={(e) => setRoomCodeInput(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-pulse-dark-bg border border-slate-200 dark:border-slate-800 focus:border-pulse-blue focus:ring-4 focus:ring-pulse-blue/10 rounded-2xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-slate-100 font-mono outline-none transition-all placeholder:text-slate-400 uppercase"
+              className="w-full bg-slate-50 dark:bg-pulse-dark-bg border border-slate-200 dark:border-slate-800 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 rounded-2xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-slate-100 font-mono outline-none transition-all placeholder:text-slate-400 uppercase"
             />
           </div>
           <button
             type="submit"
             disabled={!roomCodeInput.trim()}
-            className="w-full bg-pulse-blue hover:bg-[#4B5CEE] disabled:opacity-50 text-white font-bold py-2.5 rounded-2xl text-xs shadow-md shadow-pulse-blue/20 active:scale-98 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+            className="w-full bg-emerald-600 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold py-2.5 rounded-2xl text-xs shadow-md shadow-emerald-500/20 active:scale-98 transition-all cursor-pointer flex items-center justify-center gap-1.5"
           >
             Join Meeting Room
           </button>

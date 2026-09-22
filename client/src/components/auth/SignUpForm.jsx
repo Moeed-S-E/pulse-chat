@@ -158,7 +158,7 @@ export default function SignUpForm() {
 
       <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800/60 text-center text-xs text-slate-500 dark:text-slate-400 font-medium">
         Already have an account?{' '}
-        <Link to="/login" className="font-bold text-pulse-blue dark:text-[#7C8BFF] hover:underline ml-1">
+        <Link to="/login" className="font-bold text-emerald-600 dark:text-emerald-400 hover:underline ml-1">
           Log In
         </Link>
       </div>

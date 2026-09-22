@@ -58,7 +58,7 @@ export default function Sidebar({
         {/* Top Navigation Icons */}
         <div className="flex flex-col items-center space-y-3.5 w-full px-2">
           {/* Logo Badge */}
-          <div className="w-10 h-10 rounded-2xl pulse-gradient-bg flex items-center justify-center text-white shadow-md shadow-pulse-blue/30 mb-2">
+          <div className="w-10 h-10 rounded-2xl pulse-gradient-bg flex items-center justify-center text-white shadow-md shadow-emerald-500/30 mb-2">
             <Activity className="w-5 h-5" />
           </div>
 
@@ -68,7 +68,7 @@ export default function Sidebar({
             title="Chats & Messages"
             className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all cursor-pointer ${
               activeView === 'chats'
-                ? 'bg-indigo-50 dark:bg-indigo-950/80 text-pulse-blue font-bold shadow-sm'
+                ? 'bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 font-bold shadow-sm'
                 : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-slate-900 dark:hover:text-slate-100'
             }`}
           >
@@ -81,7 +81,7 @@ export default function Sidebar({
             title="Calls & Meeting History"
             className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all cursor-pointer ${
               activeView === 'calls'
-                ? 'bg-indigo-50 dark:bg-indigo-950/80 text-pulse-blue font-bold shadow-sm'
+                ? 'bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 font-bold shadow-sm'
                 : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70 hover:text-slate-900 dark:hover:text-slate-100'
             }`}
           >
@@ -145,7 +145,7 @@ export default function Sidebar({
             <button
               onClick={onOpenConnect}
               title="Connect @username / New Direct Message"
-              className="w-8 h-8 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/80 text-indigo-600 dark:text-indigo-400 flex items-center justify-center transition-colors cursor-pointer"
+              className="w-8 h-8 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center transition-colors cursor-pointer"
             >
               <UserPlus className="w-4 h-4" />
             </button>
@@ -168,7 +168,7 @@ export default function Sidebar({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search chats & channels..."
-              className="w-full pl-9 pr-4 py-2 bg-slate-100/80 dark:bg-[#0B0F19] border border-transparent dark:border-slate-800 rounded-2xl text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-pulse-blue transition-all"
+              className="w-full pl-9 pr-4 py-2 bg-slate-100/80 dark:bg-[#0B0F19] border border-transparent dark:border-slate-800 rounded-2xl text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 transition-all"
             />
           </div>
         </div>
@@ -215,8 +215,8 @@ export default function Sidebar({
             </div>
           ) : filteredChannels.length === 0 ? (
             <div className="py-8 text-center text-xs font-medium text-slate-400">
-              No conversations found. Use <span className="font-bold text-pulse-blue">+</span> or{' '}
-              <span className="font-bold text-pulse-blue">User Icon</span> to connect!
+              No conversations found. Use <span className="font-bold text-emerald-600">+</span> or{' '}
+              <span className="font-bold text-emerald-600">User Icon</span> to connect!
             </div>
           ) : (
             filteredChannels.map((c) => {
@@ -252,7 +252,7 @@ export default function Sidebar({
             onClick={() => onSelectView('chats')}
             className={`flex flex-col items-center space-y-0.5 py-1 px-4 rounded-2xl transition-all cursor-pointer ${
               activeView === 'chats'
-                ? 'bg-indigo-50 dark:bg-indigo-950/80 text-pulse-blue font-bold'
+                ? 'bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 font-bold'
                 : 'text-slate-500 dark:text-slate-400'
             }`}
           >
@@ -265,7 +265,7 @@ export default function Sidebar({
             onClick={() => onSelectView('calls')}
             className={`flex flex-col items-center space-y-0.5 py-1 px-4 rounded-2xl transition-all cursor-pointer ${
               activeView === 'calls'
-                ? 'bg-indigo-50 dark:bg-indigo-950/80 text-pulse-blue font-bold'
+                ? 'bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 font-bold'
                 : 'text-slate-500 dark:text-slate-400'
             }`}
           >

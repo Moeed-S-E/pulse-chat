@@ -9,7 +9,7 @@ export default function AuthLayout({ title, subtitle, children }) {
       <Card className="w-full max-w-md relative z-10 shadow-xl shadow-slate-900/5">
         {/* Brand Header */}
         <div className="flex flex-col items-center mb-6">
-          <div className="w-12 h-12 rounded-2xl bg-pulse-blue flex items-center justify-center text-white shadow-md shadow-pulse-blue/25 mb-3">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-500/25 mb-3">
             <Activity className="w-6 h-6" />
           </div>
           <h1 className="text-xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">

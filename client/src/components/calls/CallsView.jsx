@@ -182,7 +182,7 @@ export default function CallsView({
             <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Meeting Room Code
             </div>
-            <div className="text-2xl font-mono font-black text-pulse-blue tracking-wide">
+            <div className="text-2xl font-mono font-black text-emerald-600 tracking-wide">
               {createdCallLink?.code}
             </div>
             <div className="text-xs font-medium text-slate-500 dark:text-slate-400 truncate px-2">
@@ -235,7 +235,7 @@ export default function CallsView({
           <button
             onClick={onOpenJoinCall}
             title="Join with Room Code"
-            className="w-9 h-9 sm:w-auto sm:px-3 sm:py-2 rounded-2xl bg-indigo-50 dark:bg-indigo-950/80 hover:bg-indigo-100 dark:hover:bg-indigo-900/90 text-pulse-blue font-bold text-xs flex items-center justify-center space-x-1.5 transition-all border border-indigo-200/50 dark:border-indigo-800/50 cursor-pointer"
+            className="w-9 h-9 sm:w-auto sm:px-3 sm:py-2 rounded-2xl bg-emerald-50 dark:bg-emerald-950/80 hover:bg-emerald-100 dark:hover:bg-emerald-900/90 text-emerald-600 font-bold text-xs flex items-center justify-center space-x-1.5 transition-all border border-emerald-200/50 dark:border-emerald-800/50 cursor-pointer"
           >
             <KeyRound className="w-4 h-4" />
             <span className="hidden sm:inline">Join Code</span>
@@ -243,7 +243,7 @@ export default function CallsView({
           <button
             onClick={handleCreateCallLink}
             title="Create New Call Link"
-            className="px-3.5 py-2 rounded-2xl pulse-gradient-bg hover:opacity-95 text-white font-bold text-xs flex items-center space-x-1.5 transition-all shadow-md shadow-pulse-blue/20 cursor-pointer shrink-0"
+            className="px-3.5 py-2 rounded-2xl pulse-gradient-bg hover:opacity-95 text-white font-bold text-xs flex items-center space-x-1.5 transition-all shadow-md shadow-emerald-500/20 cursor-pointer shrink-0"
           >
             <Plus className="w-4 h-4" />
             <span>New Link</span>
@@ -261,20 +261,20 @@ export default function CallsView({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search recent calls or contacts..."
-            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-pulse-panel-bg border border-slate-200/80 dark:border-slate-800 rounded-2xl text-xs font-semibold text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-pulse-blue shadow-xs transition-all"
+            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-pulse-panel-bg border border-slate-200/80 dark:border-slate-800 rounded-2xl text-xs font-semibold text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 shadow-xs transition-all"
           />
         </div>
 
         {/* "Create a Call Link" Banner (WhatsApp Style) */}
         <div
           onClick={handleCreateCallLink}
-          className="p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl bg-white dark:bg-pulse-panel-bg border border-slate-200/80 dark:border-slate-800 flex items-center space-x-3.5 cursor-pointer hover:border-pulse-blue/50 transition-all shadow-xs group"
+          className="p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl bg-white dark:bg-pulse-panel-bg border border-slate-200/80 dark:border-slate-800 flex items-center space-x-3.5 cursor-pointer hover:border-emerald-500/50 transition-all shadow-xs group"
         >
-          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl pulse-gradient-bg flex items-center justify-center text-white shadow-md shadow-pulse-blue/30 shrink-0 group-hover:scale-105 transition-transform">
+          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl pulse-gradient-bg flex items-center justify-center text-white shadow-md shadow-emerald-500/30 shrink-0 group-hover:scale-105 transition-transform">
             <Link className="w-5.5 h-5.5" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-pulse-blue transition-colors">
+            <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 transition-colors">
               Create a Call Link
             </h3>
             <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -333,7 +333,7 @@ export default function CallsView({
                           {call.isOutgoing ? (
                             <ArrowUpRight className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                           ) : (
-                            <ArrowDownLeft className="w-3.5 h-3.5 text-pulse-blue shrink-0" />
+                            <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                           )}
                           <Video className="w-3 h-3 text-slate-400 shrink-0" />
                           <span>Video ({call.duration})</span>
@@ -375,7 +375,7 @@ export default function CallsView({
                               )
                             }
                             title="Video Call"
-                            className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/80 hover:bg-indigo-100 text-pulse-blue flex items-center justify-center transition-colors cursor-pointer border border-indigo-200/40 dark:border-indigo-800/40"
+                            className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/80 hover:bg-emerald-100 text-emerald-600 flex items-center justify-center transition-colors cursor-pointer border border-emerald-200/40 dark:border-emerald-800/40"
                           >
                             <Video className="w-4 h-4" />
                           </button>
@@ -404,7 +404,7 @@ export default function CallsView({
             Start a Call with Contacts
           </h2>
 
-          <div className="bg-white dark:bg-pulse-panel-bg rounded-2xl sm:rounded-3xl    -slate-200/80 dark: -slate-800 divide-y divide-slate-100 dark:divide-slate-800/60 shadow-xs overflow-hidden">
+          <div className="bg-white dark:bg-pulse-panel-bg rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800/60 shadow-xs overflow-hidden">
             {filteredContacts.length === 0 ? (
               <div className="p-6 text-center text-xs font-medium text-slate-400">
                 No direct message contacts available. Use Connect @username to start messaging!
@@ -447,7 +447,7 @@ export default function CallsView({
                       <button
                         onClick={() => startCall(userObj._id, channelId, userObj, 'video')}
                         title="Video Call"
-                        className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/80 hover:bg-indigo-100 text-pulse-blue flex items-center justify-center transition-colors cursor-pointer    -indigo-200/40 dark: -indigo-800/40"
+                        className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/80 hover:bg-emerald-100 text-emerald-600 flex items-center justify-center transition-colors cursor-pointer border border-emerald-200/40 dark:border-emerald-800/40"
                       >
                         <Video className="w-4 h-4" />
                       </button>
@@ -463,12 +463,12 @@ export default function CallsView({
       </div>
 
       {/* 3. Mobile WhatsApp-Style Bottom Navigation Bar (< md) ALWAYS VISIBLE */}
-      <div className="flex md:hidden items-center justify-around py-2 px-3 bg-slate-50 dark:bg-[#0B0F19]  -t  -slate-200/80 dark: -slate-800 shrink-0 z-20">
+      <div className="flex md:hidden items-center justify-around py-2 px-3 bg-slate-50 dark:bg-[#0B0F19] border-t border-slate-200/80 dark:border-slate-800 shrink-0 z-20">
         {/* Chats Tab */}
         <button
           onClick={() => onSelectView && onSelectView('chats')}
           className={`flex flex-col items-center space-y-0.5 py-1 px-4 rounded-2xl transition-all cursor-pointer ${activeView === 'chats'
-            ? 'bg-indigo-50 dark:bg-indigo-950/80 text-pulse-blue font-bold'
+            ? 'bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 font-bold'
             : 'text-slate-500 dark:text-slate-400'
             }`}
         >
@@ -480,7 +480,7 @@ export default function CallsView({
         <button
           onClick={() => onSelectView && onSelectView('calls')}
           className={`flex flex-col items-center space-y-0.5 py-1 px-4 rounded-2xl transition-all cursor-pointer ${activeView === 'calls'
-            ? 'bg-indigo-50 dark:bg-indigo-950/80 text-pulse-blue font-bold'
+            ? 'bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 font-bold'
             : 'text-slate-500 dark:text-slate-400'
             }`}
         >

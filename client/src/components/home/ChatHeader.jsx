@@ -76,7 +76,7 @@ export default function ChatHeader({
   };
 
   return (
-    <div className="h-16 px-4 sm:px-6 bg-white/85 dark:bg-[#111827]/85 backdrop-blur-md border-b border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between shrink-0 shadow-xs z-20 transition-colors relative">
+    <div className="h-16 px-4 sm:px-6 bg-white dark:bg-[#111827] border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 shadow-xs z-20 transition-colors relative">
       <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
         {onBack && (
           <button
@@ -98,7 +98,7 @@ export default function ChatHeader({
             size="md"
           />
         ) : (
-          <div className="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-pulse-blue">
+          <div className="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-emerald-600">
             <Hash className="w-5 h-5" />
           </div>
         )}
@@ -134,7 +134,7 @@ export default function ChatHeader({
             <button
               onClick={onStartVoiceCall}
               title="Start Voice Call"
-              className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-pulse-blue/10 dark:hover:bg-pulse-blue/20 hover:text-pulse-blue flex items-center justify-center text-slate-600 dark:text-slate-200 transition-colors cursor-pointer"
+              className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 hover:text-emerald-600 flex items-center justify-center text-slate-600 dark:text-slate-200 transition-colors cursor-pointer"
             >
               <Phone className="w-4 h-4 fill-current" />
             </button>
@@ -142,7 +142,7 @@ export default function ChatHeader({
             <button
               onClick={onStartVideoCall}
               title="Start Video Call"
-              className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-pulse-blue/10 dark:hover:bg-pulse-blue/20 hover:text-pulse-blue flex items-center justify-center text-slate-600 dark:text-slate-200 transition-colors cursor-pointer"
+              className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 hover:text-emerald-600 flex items-center justify-center text-slate-600 dark:text-slate-200 transition-colors cursor-pointer"
             >
               <Video className="w-4 h-4" />
             </button>
@@ -154,7 +154,7 @@ export default function ChatHeader({
           onClick={() => setMenuOpen(!menuOpen)}
           title="More Options"
           className={`w-9 h-9 rounded-full transition-colors flex items-center justify-center cursor-pointer ${menuOpen
-            ? 'bg-[#5B6CFF] text-white shadow-md'
+            ? 'bg-emerald-600 text-white shadow-md'
             : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'
             }`}
         >
@@ -182,7 +182,7 @@ export default function ChatHeader({
                   }}
                   className="w-full text-left px-3 py-2 text-xs font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center space-x-2.5 transition-colors cursor-pointer"
                 >
-                  <Phone className="w-4 h-4 text-[#5B6CFF]" />
+                  <Phone className="w-4 h-4 text-emerald-500" />
                   <span>Start Voice Call</span>
                 </button>
                 <button
@@ -192,7 +192,7 @@ export default function ChatHeader({
                   }}
                   className="w-full text-left px-3 py-2 text-xs font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center space-x-2.5 transition-colors cursor-pointer"
                 >
-                  <Video className="w-4 h-4 text-[#5B6CFF]" />
+                  <Video className="w-4 h-4 text-emerald-500" />
                   <span>Start Video Call</span>
                 </button>
               </>

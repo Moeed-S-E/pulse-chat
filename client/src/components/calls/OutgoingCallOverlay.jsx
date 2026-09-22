@@ -41,7 +41,7 @@ export default function OutgoingCallOverlay() {
             @{targetUsername}
           </p>
         )}
-        <p className="text-xs font-semibold text-pulse-blue tracking-wider uppercase animate-pulse">
+        <p className="text-xs font-semibold text-emerald-600 tracking-wider uppercase animate-pulse">
           Calling...
         </p>
       </div>
