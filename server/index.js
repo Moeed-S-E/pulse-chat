@@ -41,6 +41,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/channels', channelRoutes);
 app.use('/api/channels', messageRoutes);
+app.use('/api/messages', messageRoutes);
 app.use('/api/calls', callRoutes);
 
 // Health check endpoint

@@ -131,12 +131,19 @@ export default function HomePage() {
       fetchChannels();
     };
 
+    const handleChannelDeleted = ({ channelId }) => {
+      setChannels((prev) => prev.filter((c) => c._id !== channelId));
+      setSelectedChannel((prev) => (prev?._id === channelId ? null : prev));
+    };
+
     socket.on('channel:last_message', handleLastMessageUpdate);
     socket.on('channel:created', handleChannelCreated);
+    socket.on('channel:deleted', handleChannelDeleted);
 
     return () => {
       socket.off('channel:last_message', handleLastMessageUpdate);
       socket.off('channel:created', handleChannelCreated);
+      socket.off('channel:deleted', handleChannelDeleted);
     };
   }, [socket, token, currentUser]);
 
@@ -273,6 +280,7 @@ export default function HomePage() {
         ) : (
           <ChatView
             channel={selectedChannel}
+            channels={channels}
             onBack={() => setMobileShowChat(false)}
           />
         )}

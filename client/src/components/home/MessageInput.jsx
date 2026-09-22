@@ -48,7 +48,7 @@ export default function MessageInput({
   };
 
   return (
-    <div className="p-2.5 sm:p-4 bg-white dark:bg-[#111827] border-t border-slate-200/80 dark:border-slate-800 shrink-0 relative transition-colors">
+    <div className="p-2.5 sm:p-4 bg-white dark:bg-[#262C31] border-t border-slate-200 dark:border-[#2D353B] shrink-0 relative transition-colors">
       {/* Hidden File Input strictly for images */}
       <input
         type="file"
@@ -72,7 +72,7 @@ export default function MessageInput({
           type="button"
           onClick={handlePaperclipClick}
           title="Share an Image (Max 15 MB)"
-          className="p-2 text-slate-500 dark:text-slate-400 hover:text-pulse-blue rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative cursor-pointer"
+          className="p-2 text-slate-500 dark:text-[#B0BEC5] hover:text-pulse-blue rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative cursor-pointer"
         >
           <Paperclip className="w-5 h-5" />
         </button>
@@ -82,7 +82,7 @@ export default function MessageInput({
           value={inputText}
           onChange={onInputChange}
           placeholder="Type a message..."
-          className="flex-1 py-3 px-4 bg-slate-100 dark:bg-pulse-dark-bg border border-transparent dark:border-slate-800 rounded-full text-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-pulse-blue"
+          className="flex-1 py-3 px-4 bg-slate-100 dark:bg-[#1E2429] border border-slate-200 dark:border-[#2D353B] rounded-full text-sm font-medium text-slate-900 dark:text-[#EEF2F5] placeholder:text-slate-400 dark:placeholder:text-[#9AA8B2] focus:outline-none focus:border-pulse-blue"
         />
 
         {/* Send Button */}

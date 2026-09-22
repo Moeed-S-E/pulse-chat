@@ -86,4 +86,119 @@ router.post('/:id/messages', authMiddleware, async (req, res) => {
   }
 });
 
+// PUT /api/messages/:id - Edit message content
+router.put('/:id', authMiddleware, async (req, res) => {
+  try {
+    const { content } = req.body;
+    if (!content || !content.trim()) {
+      return res.status(400).json({ message: 'Message content cannot be empty.' });
+    }
+
+    const message = await Message.findById(req.params.id);
+    if (!message) {
+      return res.status(404).json({ message: 'Message not found.' });
+    }
+
+    if (message.senderId.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'You can only edit your own messages.' });
+    }
+
+    message.content = content.trim();
+    message.isEdited = true;
+    message.editedAt = new Date();
+    await message.save();
+    await message.populate('senderId', 'name username avatarInitial avatarColor bio isOnline');
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`channel:${message.channelId}`).emit('message:update', message);
+    }
+
+    res.json({ message });
+  } catch (error) {
+    console.error('Error editing message:', error);
+    res.status(500).json({ message: 'Server error editing message.' });
+  }
+});
+
+// DELETE /api/messages/:id - Delete message
+router.delete('/:id', authMiddleware, async (req, res) => {
+  try {
+    const message = await Message.findById(req.params.id);
+    if (!message) {
+      return res.status(404).json({ message: 'Message not found.' });
+    }
+
+    const channel = await Channel.findById(message.channelId);
+    const isSender = message.senderId.toString() === req.user.id;
+    const isChannelCreator = channel && channel.createdBy?.toString() === req.user.id;
+
+    if (!isSender && !isChannelCreator) {
+      return res.status(403).json({ message: 'Not authorized to delete this message.' });
+    }
+
+    message.isDeleted = true;
+    message.content = 'This message was deleted';
+    message.mediaUrl = '';
+    await message.save();
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`channel:${message.channelId}`).emit('message:delete', {
+        messageId: message._id,
+        channelId: message.channelId,
+      });
+    }
+
+    res.json({ messageId: message._id, success: true });
+  } catch (error) {
+    console.error('Error deleting message:', error);
+    res.status(500).json({ message: 'Server error deleting message.' });
+  }
+});
+
+// POST /api/messages/:id/forward - Forward message to another channel
+router.post('/:id/forward', authMiddleware, async (req, res) => {
+  try {
+    const { targetChannelId, encryptedContent } = req.body;
+    if (!targetChannelId) {
+      return res.status(400).json({ message: 'Target channel is required.' });
+    }
+
+    const originalMsg = await Message.findById(req.params.id);
+    if (!originalMsg) {
+      return res.status(404).json({ message: 'Original message not found.' });
+    }
+
+    const targetChannel = await Channel.findById(targetChannelId);
+    if (!targetChannel) {
+      return res.status(404).json({ message: 'Target channel not found.' });
+    }
+
+    const forwardedMsg = new Message({
+      channelId: targetChannelId,
+      senderId: req.user.id,
+      content: encryptedContent || originalMsg.content,
+      messageType: originalMsg.messageType,
+      mediaUrl: originalMsg.mediaUrl,
+      isForwarded: true,
+    });
+
+    await forwardedMsg.save();
+    await forwardedMsg.populate('senderId', 'name username avatarInitial avatarColor bio isOnline');
+    await Channel.findByIdAndUpdate(targetChannelId, { updatedAt: new Date() });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`channel:${targetChannelId}`).emit('message:new', forwardedMsg);
+      io.emit('channel:last_message', { channelId: targetChannelId, lastMessage: forwardedMsg });
+    }
+
+    res.status(201).json({ message: forwardedMsg });
+  } catch (error) {
+    console.error('Error forwarding message:', error);
+    res.status(500).json({ message: 'Server error forwarding message.' });
+  }
+});
+
 module.exports = router;

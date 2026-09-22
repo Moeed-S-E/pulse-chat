@@ -193,4 +193,44 @@ router.post('/dm/:targetUserId', authMiddleware, async (req, res) => {
   }
 });
 
+// DELETE /api/channels/:id - Delete channel / DM chat and all its messages
+router.delete('/:id', authMiddleware, async (req, res) => {
+  try {
+    const channelId = req.params.id;
+    const channel = await Channel.findById(channelId);
+
+    if (!channel) {
+      return res.status(404).json({ message: 'Channel or chat not found.' });
+    }
+
+    // Check permissions
+    const isMember = channel.memberIds.some((m) => m.toString() === req.user.id);
+    const isCreator = channel.createdBy && channel.createdBy.toString() === req.user.id;
+
+    if (!isMember && !isCreator) {
+      return res.status(403).json({ message: 'Not authorized to delete this chat.' });
+    }
+
+    // Delete all messages in this channel
+    await Message.deleteMany({ channelId });
+
+    // Delete the channel itself
+    await Channel.findByIdAndDelete(channelId);
+
+    // Notify all members via Socket.io
+    const io = req.app.get('io');
+    if (io) {
+      channel.memberIds.forEach((m) => {
+        const memberIdStr = typeof m === 'object' ? m._id.toString() : m.toString();
+        io.to(`user:${memberIdStr}`).emit('channel:deleted', { channelId });
+      });
+    }
+
+    res.json({ success: true, channelId });
+  } catch (error) {
+    console.error('Error deleting channel/chat:', error);
+    res.status(500).json({ message: 'Server error deleting chat.' });
+  }
+});
+
 module.exports = router;

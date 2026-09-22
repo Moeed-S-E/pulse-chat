@@ -9,7 +9,7 @@ import { useCall } from '../../context/CallContext';
 
 import { encryptMessage } from '../../utils/crypto';
 
-export default function ChatView({ channel, onBack }) {
+export default function ChatView({ channel, channels = [], onBack }) {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [typingUsers, setTypingUsers] = useState(new Set());
@@ -64,6 +64,26 @@ export default function ChatView({ channel, onBack }) {
       }
     };
 
+    const handleUpdateMessage = (updatedMsg) => {
+      if (updatedMsg.channelId === channel._id) {
+        setMessages((prev) =>
+          prev.map((m) => (m._id === updatedMsg._id ? updatedMsg : m))
+        );
+      }
+    };
+
+    const handleDeleteMessageEvent = ({ messageId, channelId: cId }) => {
+      if (cId === channel._id) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m._id === messageId
+              ? { ...m, isDeleted: true, content: 'This message was deleted', mediaUrl: '' }
+              : m
+          )
+        );
+      }
+    };
+
     const handleTypingUpdate = ({ channelId, username, isTyping }) => {
       if (channelId === channel._id) {
         setTypingUsers((prev) => {
@@ -79,11 +99,15 @@ export default function ChatView({ channel, onBack }) {
     };
 
     socket.on('message:new', handleNewMessage);
+    socket.on('message:update', handleUpdateMessage);
+    socket.on('message:delete', handleDeleteMessageEvent);
     socket.on('typing:update', handleTypingUpdate);
 
     return () => {
       socket.emit('channel:leave', { channelId: channel._id });
       socket.off('message:new', handleNewMessage);
+      socket.off('message:update', handleUpdateMessage);
+      socket.off('message:delete', handleDeleteMessageEvent);
       socket.off('typing:update', handleTypingUpdate);
     };
   }, [socket, channel?._id]);
@@ -137,6 +161,71 @@ export default function ChatView({ channel, onBack }) {
     });
   };
 
+  const handleEditMessage = async (messageId, newRawContent) => {
+    if (!token || !channel?._id) return;
+    try {
+      const encryptedContent = await encryptMessage(newRawContent, channel._id);
+      const res = await fetch(`/api/messages/${messageId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ content: encryptedContent }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setMessages((prev) =>
+          prev.map((m) => (m._id === messageId ? data.message : m))
+        );
+      }
+    } catch (err) {
+      console.error('Error editing message:', err);
+    }
+  };
+
+  const handleDeleteMessage = async (messageId) => {
+    if (!token) return;
+    try {
+      const res = await fetch(`/api/messages/${messageId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m._id === messageId
+              ? { ...m, isDeleted: true, content: 'This message was deleted', mediaUrl: '' }
+              : m
+          )
+        );
+      }
+    } catch (err) {
+      console.error('Error deleting message:', err);
+    }
+  };
+
+  const handleForwardMessage = async (messageId, targetChannelId, decryptedText) => {
+    if (!token) return;
+    try {
+      const encryptedForTarget = await encryptMessage(decryptedText, targetChannelId);
+      await fetch(`/api/messages/${messageId}/forward`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          targetChannelId,
+          encryptedContent: encryptedForTarget,
+        }),
+      });
+    } catch (err) {
+      console.error('Error forwarding message:', err);
+      throw err;
+    }
+  };
+
   const handleStartVideoCall = () => {
     if (otherMember) {
       startCall(otherMember._id, channel._id, otherMember, 'video');
@@ -176,11 +265,15 @@ export default function ChatView({ channel, onBack }) {
       <MessageThread
         messages={messages}
         currentUser={user}
+        channels={channels}
         isDM={isDM}
         loading={loading}
         typingUsers={typingUsers}
         messagesEndRef={messagesEndRef}
         onStartVideoCall={handleStartVideoCall}
+        onEditMessage={handleEditMessage}
+        onDeleteMessage={handleDeleteMessage}
+        onForwardMessage={handleForwardMessage}
       />
       <MessageInput
         inputText={inputText}

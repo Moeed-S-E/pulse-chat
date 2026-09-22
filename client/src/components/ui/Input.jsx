@@ -39,8 +39,8 @@ export default function Input({
           disabled={disabled}
           className={`w-full ${
             Icon ? 'pl-11' : 'pl-4'
-          } ${isPasswordType ? 'pr-11' : 'pr-4'} py-3 bg-slate-50/70 dark:bg-pulse-dark-bg border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:bg-white dark:focus:bg-[#111827] focus:border-pulse-blue focus:ring-4 focus:ring-pulse-blue/10 transition-all ${
-            disabled ? 'bg-slate-100 dark:bg-slate-900 cursor-not-allowed text-slate-500' : ''
+          } ${isPasswordType ? 'pr-11' : 'pr-4'} py-3 bg-white dark:bg-[#1E2429] border border-slate-200 dark:border-[#2D353B] rounded-2xl text-sm font-medium text-slate-900 dark:text-[#EEF2F5] placeholder:text-slate-400 dark:placeholder:text-[#9AA8B2] focus:outline-none focus:bg-white dark:focus:bg-[#262C31] focus:border-pulse-blue focus:ring-4 focus:ring-pulse-blue/10 transition-all ${
+            disabled ? 'bg-slate-100 dark:bg-[#1A1F24] cursor-not-allowed text-slate-500 dark:text-slate-400' : ''
           }`}
           {...props}
         />

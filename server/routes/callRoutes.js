@@ -53,4 +53,46 @@ router.post('/', authMiddleware, async (req, res) => {
   }
 });
 
+// DELETE /api/calls - Clear all call logs for current user
+router.delete('/', authMiddleware, async (req, res) => {
+  try {
+    const currentUserId = req.user.id;
+    await CallLog.deleteMany({
+      $or: [{ callerId: currentUserId }, { receiverId: currentUserId }],
+    });
+    logger.info(`[CallLog] All call history cleared by user ${currentUserId}`);
+    res.json({ success: true, message: 'All call history cleared.' });
+  } catch (error) {
+    logger.error('Error clearing call history:', error);
+    res.status(500).json({ message: 'Server error clearing call history.' });
+  }
+});
+
+// DELETE /api/calls/:id - Delete a specific call log item
+router.delete('/:id', authMiddleware, async (req, res) => {
+  try {
+    const currentUserId = req.user.id;
+    const log = await CallLog.findById(req.params.id);
+
+    if (!log) {
+      return res.status(404).json({ message: 'Call log not found.' });
+    }
+
+    const isOwner =
+      log.callerId?.toString() === currentUserId ||
+      log.receiverId?.toString() === currentUserId;
+
+    if (!isOwner) {
+      return res.status(403).json({ message: 'Not authorized to delete this call log.' });
+    }
+
+    await CallLog.findByIdAndDelete(req.params.id);
+    logger.info(`[CallLog] Call log ${req.params.id} deleted by user ${currentUserId}`);
+    res.json({ success: true, id: req.params.id });
+  } catch (error) {
+    logger.error('Error deleting call log:', error);
+    res.status(500).json({ message: 'Server error deleting call log.' });
+  }
+});
+
 module.exports = router;

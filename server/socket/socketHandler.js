@@ -338,20 +338,41 @@ const setupSocketHandler = (io) => {
       }
     });
 
+    // Invite user to a room call
+    socket.on('call:invite:room', ({ targetUserId, roomCode }) => {
+      if (!targetUserId || !roomCode) return;
+      logger.info(`[Call:WebSocket] Room invite sent from ${socket.username} to ${targetUserId} for room ${roomCode}`);
+      io.to(`user:${targetUserId}`).emit('meeting:incoming_invite', {
+        roomCode,
+        inviterInfo: { id: userId, username: socket.username, name: socket.username },
+      });
+    });
+
     socket.on('meeting:leave', ({ roomCode }) => {
-      if (!roomCode) return;
-      const cleanCode = roomCode.toUpperCase().trim();
+      const cleanCode = (roomCode || socket.currentMeetingRoom || '').toUpperCase().trim();
+      if (!cleanCode) return;
       socket.leave(`meeting:${cleanCode}`);
       socket.currentMeetingRoom = null;
       socket.to(`meeting:${cleanCode}`).emit('meeting:peer_left', {
         userId,
         username: socket.username,
       });
+      logger.info(`[Meeting 1:M] ${socket.username} (${userId}) left meeting room ${cleanCode}`);
     });
 
     // Disconnect handling
     socket.on('disconnect', () => {
       console.log(`[Socket] User disconnected: ${socket.username} (${userId})`);
+
+      if (socket.currentMeetingRoom) {
+        const cleanCode = socket.currentMeetingRoom;
+        socket.to(`meeting:${cleanCode}`).emit('meeting:peer_left', {
+          userId,
+          username: socket.username,
+        });
+        socket.currentMeetingRoom = null;
+      }
+
       const userSockets = activeSockets.get(userId);
 
       if (userSockets) {

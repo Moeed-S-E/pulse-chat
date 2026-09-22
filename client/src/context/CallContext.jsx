@@ -269,7 +269,22 @@ export const CallProvider = ({ children }) => {
     };
 
     // Call ended by remote user
-    const handleCallEnded = () => {
+    const handleCallEnded = ({ endedByUserId } = {}) => {
+      console.log('[Call] Received call:ended, endedByUserId:', endedByUserId);
+
+      // If in a 1:M multi-user call and other participants remain, only remove that peer
+      if (endedByUserId && peerConnectionsRef.current.has(endedByUserId) && remoteStreams.length > 1) {
+        console.log(`[Call 1:M] Participant ${endedByUserId} left. Keeping call active for remaining participants.`);
+        const pc = peerConnectionsRef.current.get(endedByUserId);
+        if (pc) {
+          pc.close();
+          peerConnectionsRef.current.delete(endedByUserId);
+        }
+        setRemoteStreams((prev) => prev.filter((p) => p.peerId !== endedByUserId));
+        showToast('A participant left the video call', 'info');
+        return;
+      }
+
       cleanupCall();
       setCallState('ended');
       showToast('Video call ended', 'info');
@@ -280,6 +295,20 @@ export const CallProvider = ({ children }) => {
     };
 
     // --- 1:M Meeting Room Mesh Event Handlers ---
+
+    // Receiving incoming invite to a room
+    const handleMeetingIncomingInvite = ({ roomCode, inviterInfo }) => {
+      showToast(`@${inviterInfo?.username || 'User'} invited you to join call room ${roomCode}`, 'info');
+      if (callState === 'idle') {
+        setCallInfo({
+          isRoomCall: true,
+          roomCode,
+          callerInfo: inviterInfo,
+          calleeInfo: { name: `Room ${roomCode}`, username: roomCode },
+        });
+        setCallState('incoming');
+      }
+    };
 
     // Receiving existing room peers list when joining
     const handleMeetingExistingPeers = async ({ roomCode, existingPeers }) => {
@@ -303,7 +332,7 @@ export const CallProvider = ({ children }) => {
     // New peer joined meeting room
     const handleMeetingPeerJoined = async ({ userId: peerId, username: peerName, roomCode }) => {
       console.log(`[Meeting 1:M] ${peerName} joined room ${roomCode}`);
-      showToast(`@${peerName} joined the video call`, 'info');
+      showToast(`@${peerName || 'User'} joined the video call`, 'info');
       setCallState('active');
       await getMedia();
       createPeerConnection(peerId, peerName, true, roomCode);
@@ -347,10 +376,10 @@ export const CallProvider = ({ children }) => {
       }
     };
 
-    // Participant left meeting room
+    // Participant left meeting room (1:M call)
     const handleMeetingPeerLeft = ({ userId: peerId, username: peerName }) => {
-      console.log(`[Meeting 1:M] Peer left ${peerName}`);
-      showToast(`@${peerName} left the video call`, 'info');
+      console.log(`[Meeting 1:M] Peer left ${peerName || peerId}`);
+      showToast(`@${peerName || 'Participant'} left the video call`, 'info');
 
       const pc = peerConnectionsRef.current.get(peerId);
       if (pc) {
@@ -369,6 +398,7 @@ export const CallProvider = ({ children }) => {
     socket.on('webrtc:ice-candidate', handleICECandidate);
     socket.on('call:ended', handleCallEnded);
 
+    socket.on('meeting:incoming_invite', handleMeetingIncomingInvite);
     socket.on('meeting:existing_peers', handleMeetingExistingPeers);
     socket.on('meeting:peer_joined', handleMeetingPeerJoined);
     socket.on('meeting:webrtc:offer', handleMeetingWebRTCOffer);
@@ -385,6 +415,7 @@ export const CallProvider = ({ children }) => {
       socket.off('webrtc:ice-candidate', handleICECandidate);
       socket.off('call:ended', handleCallEnded);
 
+      socket.off('meeting:incoming_invite', handleMeetingIncomingInvite);
       socket.off('meeting:existing_peers', handleMeetingExistingPeers);
       socket.off('meeting:peer_joined', handleMeetingPeerJoined);
       socket.off('meeting:webrtc:offer', handleMeetingWebRTCOffer);
@@ -507,7 +538,7 @@ export const CallProvider = ({ children }) => {
     const durationStr = formatDuration(callSeconds);
 
     if (socket && callInfo) {
-      if (callInfo.isRoomCall) {
+      if (callInfo.isRoomCall || callInfo.roomCode || remoteStreams.length > 1) {
         socket.emit('meeting:leave', { roomCode: callInfo.roomCode });
       } else {
         socket.emit('call:end', {

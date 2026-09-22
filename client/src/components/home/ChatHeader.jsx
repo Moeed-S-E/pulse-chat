@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Video, Phone, MoreVertical, Hash, Copy, Check, BellOff, ArrowLeft } from 'lucide-react';
+import { Video, Phone, MoreVertical, Hash, Copy, Check, BellOff, ArrowLeft, Trash2 } from 'lucide-react';
 import Avatar from '../ui/Avatar';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
 
 export default function ChatHeader({
   channel,
@@ -15,6 +16,7 @@ export default function ChatHeader({
   const [copied, setCopied] = useState(false);
   const menuRef = useRef(null);
   const { showToast } = useToast();
+  const { token } = useAuth();
 
   const isDM = channel?.isDM;
   const otherMember = isDM
@@ -45,6 +47,32 @@ export default function ChatHeader({
   const handleMuteToggle = () => {
     showToast(`Notifications muted for ${isDM ? otherMember?.name : channel.name}`, 'info');
     setMenuOpen(false);
+  };
+
+  const handleDeleteChat = async () => {
+    if (!channel?._id || !token) return;
+    const name = isDM ? (otherMember?.name || 'User') : `#${channel.name}`;
+    if (!window.confirm(`Are you sure you want to delete the chat "${name}"? All messages will be permanently deleted.`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/channels/${channel._id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        showToast('Chat deleted successfully', 'success');
+        setMenuOpen(false);
+        if (onBack) onBack();
+      } else {
+        const err = await res.json();
+        showToast(err.message || 'Failed to delete chat', 'error');
+      }
+    } catch (e) {
+      console.error('Error deleting chat:', e);
+      showToast('Failed to delete chat', 'error');
+    }
   };
 
   return (
@@ -82,7 +110,6 @@ export default function ChatHeader({
             </h3>
           </div>
           <p className="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center space-x-1.5">
-
             <span>
               {isDM
                 ? `@${otherMember?.username}`
@@ -188,6 +215,13 @@ export default function ChatHeader({
             </button>
 
             <div className="pt-1 mt-1 border-t border-slate-100 dark:border-slate-800">
+              <button
+                onClick={handleDeleteChat}
+                className="w-full text-left px-3 py-2 text-xs font-bold rounded-xl hover:bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center space-x-2.5 transition-colors cursor-pointer"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Delete Chat History</span>
+              </button>
             </div>
           </div>
         )}

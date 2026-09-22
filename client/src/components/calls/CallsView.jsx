@@ -14,6 +14,7 @@ import {
   Settings,
   Copy,
   Check,
+  Trash2,
 } from 'lucide-react';
 import Avatar from '../ui/Avatar';
 import Modal from '../ui/Modal';
@@ -53,6 +54,37 @@ export default function CallsView({
       .catch((err) => console.error('Error fetching DB call logs:', err));
   }, [token]);
 
+  const handleClearAllCalls = async () => {
+    if (!token) return;
+    if (!window.confirm('Are you sure you want to clear your entire call history?')) return;
+    try {
+      const res = await fetch('/api/calls', {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        setDbCallLogs([]);
+      }
+    } catch (err) {
+      console.error('Error clearing call logs:', err);
+    }
+  };
+
+  const handleDeleteCallLog = async (callId) => {
+    if (!token || !callId) return;
+    try {
+      const res = await fetch(`/api/calls/${callId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        setDbCallLogs((prev) => prev.filter((log) => log._id !== callId));
+      }
+    } catch (err) {
+      console.error('Error deleting call log:', err);
+    }
+  };
+
   // Extract all call logs from backend DB and channel messages
   const recentCalls = [];
   const logIds = new Set();
@@ -73,6 +105,7 @@ export default function CallsView({
       duration: log.duration || '00:00',
       timestamp: log.createdAt || log.startedAt,
       status: log.status,
+      isDbLog: true,
     });
   });
 
@@ -100,6 +133,7 @@ export default function CallsView({
           isOutgoing,
           duration: c.lastMessage.callDuration || '00:00',
           timestamp: c.lastMessage.createdAt || c.updatedAt,
+          isDbLog: false,
         });
       }
     }
@@ -144,7 +178,7 @@ export default function CallsView({
         subtitle="Anyone with PulseChat can use this room code or link to join your encrypted meeting."
       >
         <div className="space-y-4">
-          <div className="p-4 bg-slate-100 dark:bg-slate-900 rounded-2xl    -slate-200 dark: -slate-800 space-y-2 text-center">
+          <div className="p-4 bg-slate-100 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2 text-center">
             <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Meeting Room Code
             </div>
@@ -187,7 +221,7 @@ export default function CallsView({
       </Modal>
 
       {/* 1. Header (Clean & Un-cramped) */}
-      <div className="p-4 sm:p-5 bg-white dark:bg-pulse-panel-bg  -b  -slate-200/80 dark: -slate-800 flex items-center justify-between shadow-xs shrink-0">
+      <div className="p-4 sm:p-5 bg-white dark:bg-pulse-panel-bg border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between shadow-xs shrink-0">
         <div>
           <h1 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
             Calls & Meetings
@@ -201,7 +235,7 @@ export default function CallsView({
           <button
             onClick={onOpenJoinCall}
             title="Join with Room Code"
-            className="w-9 h-9 sm:w-auto sm:px-3 sm:py-2 rounded-2xl bg-indigo-50 dark:bg-indigo-950/80 hover:bg-indigo-100 dark:hover:bg-indigo-900/90 text-pulse-blue font-bold text-xs flex items-center justify-center space-x-1.5 transition-all    -indigo-200/50 dark: -indigo-800/50 cursor-pointer"
+            className="w-9 h-9 sm:w-auto sm:px-3 sm:py-2 rounded-2xl bg-indigo-50 dark:bg-indigo-950/80 hover:bg-indigo-100 dark:hover:bg-indigo-900/90 text-pulse-blue font-bold text-xs flex items-center justify-center space-x-1.5 transition-all border border-indigo-200/50 dark:border-indigo-800/50 cursor-pointer"
           >
             <KeyRound className="w-4 h-4" />
             <span className="hidden sm:inline">Join Code</span>
@@ -227,14 +261,14 @@ export default function CallsView({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search recent calls or contacts..."
-            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-pulse-panel-bg    -slate-200/80 dark: -slate-800 rounded-2xl text-xs font-semibold text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus: -pulse-blue shadow-xs transition-all"
+            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-pulse-panel-bg border border-slate-200/80 dark:border-slate-800 rounded-2xl text-xs font-semibold text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-pulse-blue shadow-xs transition-all"
           />
         </div>
 
         {/* "Create a Call Link" Banner (WhatsApp Style) */}
         <div
           onClick={handleCreateCallLink}
-          className="p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl bg-white dark:bg-pulse-panel-bg    -slate-200/80 dark: -slate-800 flex items-center space-x-3.5 cursor-pointer hover: -pulse-blue/50 transition-all shadow-xs group"
+          className="p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl bg-white dark:bg-pulse-panel-bg border border-slate-200/80 dark:border-slate-800 flex items-center space-x-3.5 cursor-pointer hover:border-pulse-blue/50 transition-all shadow-xs group"
         >
           <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl pulse-gradient-bg flex items-center justify-center text-white shadow-md shadow-pulse-blue/30 shrink-0 group-hover:scale-105 transition-transform">
             <Link className="w-5.5 h-5.5" />
@@ -251,16 +285,28 @@ export default function CallsView({
 
         {/* Recent Calls Section */}
         <div>
-          <h2 className="text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-2.5 px-1">
-            Recent Calls Log
-          </h2>
+          <div className="flex items-center justify-between mb-2.5 px-1">
+            <h2 className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
+              Recent Calls Log
+            </h2>
+            {filteredCalls.length > 0 && (
+              <button
+                onClick={handleClearAllCalls}
+                className="text-[11px] font-bold text-rose-500 hover:text-rose-600 dark:hover:text-rose-400 flex items-center space-x-1 cursor-pointer"
+                title="Clear Call History"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Clear All</span>
+              </button>
+            )}
+          </div>
 
           {filteredCalls.length === 0 ? (
-            <div className="p-6 text-center rounded-2xl sm:rounded-3xl bg-white dark:bg-pulse-panel-bg    -slate-200/80 dark: -slate-800 text-slate-400 text-xs font-medium">
+            <div className="p-6 text-center rounded-2xl sm:rounded-3xl bg-white dark:bg-pulse-panel-bg border border-slate-200/80 dark:border-slate-800 text-slate-400 text-xs font-medium">
               No recent call history found. Start a call with a contact below!
             </div>
           ) : (
-            <div className="bg-white dark:bg-pulse-panel-bg rounded-2xl sm:rounded-3xl    -slate-200/80 dark: -slate-800 divide-y divide-slate-100 dark:divide-slate-800/60 shadow-xs overflow-hidden">
+            <div className="bg-white dark:bg-pulse-panel-bg rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800/60 shadow-xs overflow-hidden">
               {filteredCalls.map((call) => {
                 const isOnline = call.otherMember
                   ? call.otherMember.isOnline || onlineUsers.has(call.otherMember._id)
@@ -329,11 +375,20 @@ export default function CallsView({
                               )
                             }
                             title="Video Call"
-                            className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/80 hover:bg-indigo-100 text-pulse-blue flex items-center justify-center transition-colors cursor-pointer    -indigo-200/40 dark: -indigo-800/40"
+                            className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/80 hover:bg-indigo-100 text-pulse-blue flex items-center justify-center transition-colors cursor-pointer border border-indigo-200/40 dark:border-indigo-800/40"
                           >
                             <Video className="w-4 h-4" />
                           </button>
                         </>
+                      )}
+                      {call.isDbLog && (
+                        <button
+                          onClick={() => handleDeleteCallLog(call.id)}
+                          title="Delete Call Log"
+                          className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/50 text-slate-400 hover:text-rose-500 flex items-center justify-center transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       )}
                     </div>
                   </div>
