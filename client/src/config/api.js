@@ -17,3 +17,18 @@ export const getApiUrl = (endpoint) => {
 export const apiFetch = (endpoint, options) => {
   return fetch(getApiUrl(endpoint), options);
 };
+
+// Immediate background server warmup for Render cold starts
+export const warmupServer = () => {
+  try {
+    const url = getApiUrl('/api/health');
+    fetch(url, { method: 'GET', cache: 'no-store' }).catch(() => {});
+  } catch (e) {
+    // Ignore initial background warmup errors
+  }
+};
+
+// Trigger server warmup immediately when JS bundle loads in browser
+if (typeof window !== 'undefined') {
+  warmupServer();
+}

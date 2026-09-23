@@ -11,6 +11,7 @@ import { Hash, Search, Check, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import { apiFetch } from '../config/api';
+import { decryptMessage } from '../utils/crypto';
 import {
   playMessageNotificationSound,
   showDesktopNotification,
@@ -90,7 +91,7 @@ export default function HomePage() {
   useEffect(() => {
     if (!socket) return;
 
-    const handleLastMessageUpdate = ({ channelId, lastMessage }) => {
+    const handleLastMessageUpdate = async ({ channelId, lastMessage }) => {
       const senderId = lastMessage?.senderId?._id || lastMessage?.senderId;
       const isFromMe = senderId === currentUser?._id;
 
@@ -100,10 +101,23 @@ export default function HomePage() {
         const senderName =
           lastMessage?.senderId?.name ||
           (lastMessage?.senderId?.username ? `@${lastMessage.senderId.username}` : 'PulseChat');
-        const previewText =
-          lastMessage?.messageType === 'image'
-            ? '📷 Sent an image'
-            : lastMessage?.content || 'Sent you a message';
+        
+        let previewText = 'Sent you a message';
+        if (lastMessage?.messageType === 'image') {
+          previewText = '📷 Sent an image';
+        } else if (lastMessage?.content) {
+          const raw = lastMessage.content;
+          if (raw.startsWith('ENC:v1:')) {
+            try {
+              const decrypted = await decryptMessage(raw, channelId);
+              previewText = decrypted || 'New message';
+            } catch {
+              previewText = 'New message';
+            }
+          } else {
+            previewText = raw;
+          }
+        }
 
         showDesktopNotification(`Message from ${senderName}`, {
           body: previewText,

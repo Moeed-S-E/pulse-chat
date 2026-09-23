@@ -87,7 +87,7 @@ export default function ActiveCallOverlay() {
     toggleCamera,
   } = callContext || {};
 
-  const { token } = useAuth();
+  const { user, token } = useAuth();
   const { socket } = useSocket();
   const { showToast } = useToast();
 

@@ -11,6 +11,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Lenis from 'lenis';
 import * as THREE from 'three';
 import { useAuth } from '../context/AuthContext';
+import { warmupServer } from '../config/api';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -301,11 +302,10 @@ function EditorialCursor() {
   return (
     <div
       ref={cursorRef}
-      className={`hidden lg:flex fixed top-0 left-0 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-50 items-center justify-center transition-all duration-300 ${
-        isHovered
-          ? 'w-20 h-20 bg-[#F2F0EA] text-[#0B0B0B] rounded-full shadow-2xl scale-100'
-          : 'w-4 h-4 bg-[#F2F0EA] rounded-full opacity-60 scale-75'
-      }`}
+      className={`hidden lg:flex fixed top-0 left-0 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-50 items-center justify-center transition-all duration-300 ${isHovered
+        ? 'w-20 h-20 bg-[#F2F0EA] text-[#0B0B0B] rounded-full shadow-2xl scale-100'
+        : 'w-4 h-4 bg-[#F2F0EA] rounded-full opacity-60 scale-75'
+        }`}
     >
       {isHovered && (
         <span className="text-[10px] font-mono font-black uppercase tracking-widest text-[#0B0B0B]">
@@ -352,9 +352,8 @@ function LineDrawSectionHeader({ number, subtitle, isLight = false }) {
         <div className="overflow-hidden">
           <span
             ref={numberRef}
-            className={`block font-bold ${
-              isLight ? 'text-[#0B0B0B]' : 'text-[#C4F135]'
-            }`}
+            className={`block font-bold ${isLight ? 'text-[#0B0B0B]' : 'text-[#C4F135]'
+              }`}
           >
             {number}
           </span>
@@ -364,11 +363,10 @@ function LineDrawSectionHeader({ number, subtitle, isLight = false }) {
 
       <div
         ref={lineRef}
-        className={`w-full h-[1px] ${
-          isLight
-            ? 'bg-[rgba(11,11,11,0.2)]'
-            : 'bg-[rgba(255,255,255,0.14)]'
-        }`}
+        className={`w-full h-[1px] ${isLight
+          ? 'bg-[rgba(11,11,11,0.2)]'
+          : 'bg-[rgba(255,255,255,0.14)]'
+          }`}
       />
     </div>
   );
@@ -697,6 +695,10 @@ function FinalCTASequence({ onLaunch }) {
 export default function LandingPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  useEffect(() => {
+    warmupServer();
+  }, []);
 
   const [showPreloader, setShowPreloader] = useState(true);
 
@@ -1392,22 +1394,20 @@ export default function LandingPage() {
             <div className="flex space-x-4 font-mono text-xs">
               <button
                 onClick={() => setActiveTab('video')}
-                className={`px-5 py-2.5 uppercase font-bold transition-all cursor-pointer ${
-                  activeTab === 'video'
-                    ? 'bg-[#F2F0EA] text-[#0B0B0B]'
-                    : 'text-[#8B8B86] hover:text-white border border-[rgba(255,255,255,0.14)]'
-                }`}
+                className={`px-5 py-2.5 uppercase font-bold transition-all cursor-pointer ${activeTab === 'video'
+                  ? 'bg-[#F2F0EA] text-[#0B0B0B]'
+                  : 'text-[#8B8B86] hover:text-white border border-[rgba(255,255,255,0.14)]'
+                  }`}
                 data-cursor="SWITCH"
               >
                 Media Viewport
               </button>
               <button
                 onClick={() => setActiveTab('security')}
-                className={`px-5 py-2.5 uppercase font-bold transition-all cursor-pointer ${
-                  activeTab === 'security'
-                    ? 'bg-[#F2F0EA] text-[#0B0B0B]'
-                    : 'text-[#8B8B86] hover:text-white border border-[rgba(255,255,255,0.14)]'
-                }`}
+                className={`px-5 py-2.5 uppercase font-bold transition-all cursor-pointer ${activeTab === 'security'
+                  ? 'bg-[#F2F0EA] text-[#0B0B0B]'
+                  : 'text-[#8B8B86] hover:text-white border border-[rgba(255,255,255,0.14)]'
+                  }`}
                 data-cursor="SWITCH"
               >
                 Diagnostic Mode
@@ -1439,11 +1439,10 @@ export default function LandingPage() {
 
                     <button
                       onClick={handleStartDemoToggle}
-                      className={`px-6 py-2 font-bold uppercase transition-all cursor-pointer ${
-                        demoActive
-                          ? 'bg-rose-600 text-white'
-                          : 'bg-[#C4F135] text-[#0B0B0B] hover:opacity-90'
-                      }`}
+                      className={`px-6 py-2 font-bold uppercase transition-all cursor-pointer ${demoActive
+                        ? 'bg-rose-600 text-white'
+                        : 'bg-[#C4F135] text-[#0B0B0B] hover:opacity-90'
+                        }`}
                       data-cursor="TOGGLE"
                     >
                       {demoConnecting ? 'CONNECTING...' : demoActive ? 'END SESSION' : 'START SESSION'}

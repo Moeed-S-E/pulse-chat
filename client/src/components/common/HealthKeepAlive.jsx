@@ -1,35 +1,46 @@
 import { useEffect, useState } from 'react';
-import { apiFetch } from '../../config/api';
+import { apiFetch, warmupServer } from '../../config/api';
 
 export default function HealthKeepAlive() {
-  const [isServerAlive, setIsServerAlive] = useState(true);
+  const [status, setStatus] = useState('warming'); // 'warming' | 'online' | 'offline'
 
   useEffect(() => {
     let isMounted = true;
+    let timerId = null;
+
+    // Immediately trigger background server warmup
+    warmupServer();
 
     const checkHealth = async () => {
       try {
-        const res = await apiFetch('/api/health');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout per check
+
+        const res = await apiFetch('/api/health', { signal: controller.signal });
+        clearTimeout(timeoutId);
+
         if (res.ok) {
-          if (isMounted) setIsServerAlive(true);
+          if (isMounted) setStatus('online');
+          // Server is warm & online -> ping every 15 seconds to prevent idle sleep
+          timerId = setTimeout(checkHealth, 15000);
         } else {
-          if (isMounted) setIsServerAlive(false);
+          if (isMounted) setStatus('warming');
+          // Server starting up -> retry aggressively in 3s
+          timerId = setTimeout(checkHealth, 3000);
         }
       } catch (err) {
-        if (isMounted) setIsServerAlive(false);
-        console.warn('[Health Check] Backend health ping failed:', err.message);
+        if (isMounted) setStatus('warming');
+        console.log('[Server Warmup] Waking up backend server on Render...');
+        // Retry aggressively every 3 seconds during cold start
+        timerId = setTimeout(checkHealth, 3000);
       }
     };
 
-    // Initial ping on mount
     checkHealth();
-
-    // Continuously ping backend health endpoint every 15 seconds (15,000 ms)
-    const intervalId = setInterval(checkHealth, 15000);
 
     return () => {
       isMounted = false;
-      clearInterval(intervalId);
+      if (timerId) clearTimeout(timerId);
     };
   }, []);
 
