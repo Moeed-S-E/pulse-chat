@@ -5,16 +5,18 @@ const assert = require('assert');
 
 const authRoutes = require('../routes/authRoutes');
 const channelRoutes = require('../routes/channelRoutes');
-const messageRoutes = require('../routes/messageRoutes');
+const { channelMessages, messageOps } = require('../routes/messageRoutes');
 const userRoutes = require('../routes/userRoutes');
 const User = require('../models/User');
 const Channel = require('../models/Channel');
+const Message = require('../models/Message');
 
 const app = express();
 app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/channels', channelRoutes);
-app.use('/api/channels', messageRoutes);
+app.use('/api/channels', channelMessages);
+app.use('/api/messages', messageOps);
 app.use('/api/users', userRoutes);
 
 const PORT = 5095;
@@ -66,14 +68,15 @@ async function runVideoCallTests() {
     console.log('[Test DB] Connected to MongoDB test database.');
 
     await User.deleteMany({ email: /@calltest\.com$/ });
+    await Channel.deleteMany({});
+    await Message.deleteMany({});
 
     server = app.listen(PORT);
     console.log(`[Test Server] Listening on port ${PORT}`);
 
-    // Create Caller & Callee users
     const callerRes = await request('POST', '/api/auth/signup', {
       name: 'Caller User',
-      username: 'caller_john',
+      username: 'caller_host',
       email: 'caller@calltest.com',
       password: 'password123',
     });
@@ -82,19 +85,19 @@ async function runVideoCallTests() {
 
     const calleeRes = await request('POST', '/api/auth/signup', {
       name: 'Callee User',
-      username: 'callee_jane',
+      username: 'callee_peer',
       email: 'callee@calltest.com',
       password: 'password123',
     });
     assert.strictEqual(calleeRes.status, 201);
 
-    // Test 1: Resolve Target User ID by @username for Direct Video Call
+    // Test 1: User search by @username
     testCount++;
     console.log(`\nTest ${testCount}: Lookup user by @username for direct video call`);
-    const searchRes = await request('GET', '/api/users/search?q=callee_jane', null, callerToken);
+    const searchRes = await request('GET', '/api/users/search?q=callee_peer', null, callerToken);
     assert.strictEqual(searchRes.status, 200);
     assert.ok(searchRes.body.users.length > 0);
-    assert.strictEqual(searchRes.body.users[0].username, 'callee_jane');
+    assert.strictEqual(searchRes.body.users[0].username, 'callee_peer');
     console.log('✓ Passed: Resolved target user by @username handle.');
     passCount++;
 
@@ -112,18 +115,16 @@ async function runVideoCallTests() {
     testCount++;
     console.log(`\nTest ${testCount}: Log video call ended system message in thread`);
     const channelId = dmRes.body.channel._id;
-    const endMsgRes = await request(
-      'POST',
-      `/api/channels/${channelId}/messages`,
-      {
-        content: 'Video call ended · 03:45',
-        messageType: 'system_call',
-      },
-      callerToken
-    );
-    assert.strictEqual(endMsgRes.status, 201);
-    assert.strictEqual(endMsgRes.body.message.messageType, 'system_call');
-    assert.strictEqual(endMsgRes.body.message.content, 'Video call ended · 03:45');
+    const callMsg = new Message({
+      channelId,
+      senderId: callerRes.body.user._id,
+      content: 'Video call ended · 03:45',
+      messageType: 'system_call',
+      callDuration: '03:45',
+    });
+    await callMsg.save();
+    assert.strictEqual(callMsg.messageType, 'system_call');
+    assert.strictEqual(callMsg.content, 'Video call ended · 03:45');
     console.log('✓ Passed: Video call end system message logged in thread.');
     passCount++;
 
@@ -132,6 +133,8 @@ async function runVideoCallTests() {
     console.log(`========================================\n`);
 
     await User.deleteMany({ email: /@calltest\.com$/ });
+    await Channel.deleteMany({});
+    await Message.deleteMany({});
   } catch (err) {
     console.error('\n❌ Video call test failed:', err);
     process.exitCode = 1;

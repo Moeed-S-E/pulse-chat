@@ -206,11 +206,12 @@ export default function ChatView({ channel, channels = [], onBack }) {
     }
   };
 
-  const handleForwardMessage = async (messageId, targetChannelId, decryptedText) => {
+  const handleForwardMessage = async (messageId, targetChannelId, decryptedText, decryptedImage) => {
     if (!token) return;
     try {
-      const encryptedForTarget = await encryptMessage(decryptedText, targetChannelId);
-      await apiFetch(`/api/messages/${messageId}/forward`, {
+      const encryptedContent = await encryptMessage(decryptedText || '📷 Image', targetChannelId);
+      const encryptedMediaUrl = decryptedImage ? await encryptMessage(decryptedImage, targetChannelId) : '';
+      const res = await apiFetch(`/api/messages/${messageId}/forward`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -218,9 +219,14 @@ export default function ChatView({ channel, channels = [], onBack }) {
         },
         body: JSON.stringify({
           targetChannelId,
-          encryptedContent: encryptedForTarget,
+          encryptedContent,
+          encryptedMediaUrl,
         }),
       });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || 'Forward failed');
+      }
     } catch (err) {
       console.error('Error forwarding message:', err);
       throw err;

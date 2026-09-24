@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from '../components/home/Sidebar';
 import ChatView from '../components/home/ChatView';
 import CallsView from '../components/calls/CallsView';
@@ -87,15 +87,28 @@ export default function HomePage() {
     requestNotificationPermission();
   }, []);
 
+  const channelsRef = useRef(channels);
+  useEffect(() => { channelsRef.current = channels; }, [channels]);
+
+  const selectedChannelRef = useRef(selectedChannel);
+  useEffect(() => { selectedChannelRef.current = selectedChannel; }, [selectedChannel]);
+
   // Real-time lastMessage & channel list update via socket
   useEffect(() => {
     if (!socket) return;
 
     const handleLastMessageUpdate = async ({ channelId, lastMessage }) => {
+      const known = channelsRef.current.some((c) => c._id === channelId);
+      if (!known) {
+        fetchChannels();
+        return;
+      }
+
       const senderId = lastMessage?.senderId?._id || lastMessage?.senderId;
       const isFromMe = senderId === currentUser?._id;
+      const isOpenAndFocused = document.hasFocus() && selectedChannelRef.current?._id === channelId;
 
-      if (!isFromMe && lastMessage?.messageType !== 'system_call') {
+      if (!isFromMe && !isOpenAndFocused && lastMessage?.messageType !== 'system_call') {
         playMessageNotificationSound();
 
         const senderName =
@@ -127,7 +140,6 @@ export default function HomePage() {
       setChannels((prevChannels) => {
         const targetIndex = prevChannels.findIndex((c) => c._id === channelId);
         if (targetIndex === -1) {
-          fetchChannels();
           return prevChannels;
         }
 
@@ -142,7 +154,7 @@ export default function HomePage() {
       });
     };
 
-    const handleChannelCreated = (newChannel) => {
+    const handleChannelCreated = () => {
       fetchChannels();
     };
 
@@ -223,8 +235,7 @@ export default function HomePage() {
       if (res.ok) {
         const data = await res.json();
         setChannels((prev) => [data.channel, ...prev]);
-        setSelectedChannel(data.channel);
-        setActiveView('chats');
+        handleSelectChannel(data.channel);
         resetCreateModal();
         return;
       }
@@ -243,8 +254,7 @@ export default function HomePage() {
     };
 
     setChannels((prev) => [newChan, ...prev]);
-    setSelectedChannel(newChan);
-    setActiveView('chats');
+    handleSelectChannel(newChan);
     resetCreateModal();
   };
 
@@ -257,7 +267,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="flex h-screen bg-[#F7F8FA] dark:bg-pulse-dark-bg overflow-hidden relative">
+    <div className="flex h-[100dvh] bg-[#F7F8FA] dark:bg-pulse-dark-bg overflow-hidden relative">
       {/* Sidebar List Column (Mobile List View or Desktop Left Column) */}
       <div className={`w-full md:w-80 lg:w-96 h-full shrink-0 ${mobileShowChat ? 'hidden md:flex' : 'flex'}`}>
         <div className={`w-full h-full ${activeView === 'calls' ? 'flex md:hidden' : 'hidden'}`}>
@@ -306,8 +316,7 @@ export default function HomePage() {
         onClose={() => setIsConnectOpen(false)}
         onSelectChannel={(c) => {
           setChannels((prev) => [c, ...prev.filter((item) => item._id !== c._id)]);
-          setSelectedChannel(c);
-          setActiveView('chats');
+          handleSelectChannel(c);
         }}
       />
 

@@ -2,11 +2,13 @@ const http = require('http');
 const express = require('express');
 const mongoose = require('mongoose');
 const assert = require('assert');
-const jwt = require('jsonwebtoken');
+const { Server } = require('socket.io');
+const { io: ioClient } = require('../../client/node_modules/socket.io-client');
 
 const authRoutes = require('../routes/authRoutes');
 const channelRoutes = require('../routes/channelRoutes');
-const messageRoutes = require('../routes/messageRoutes');
+const { channelMessages, messageOps } = require('../routes/messageRoutes');
+const setupSocketHandler = require('../socket/socketHandler');
 const User = require('../models/User');
 const Channel = require('../models/Channel');
 const Message = require('../models/Message');
@@ -15,12 +17,14 @@ const app = express();
 app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/channels', channelRoutes);
-app.use('/api/channels', messageRoutes);
+app.use('/api/channels', channelMessages);
+app.use('/api/messages', messageOps);
 
 const PORT = 5098;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/pulsechat_test';
 
 let server;
+let ioServer;
 
 function request(method, path, body = null, token = null) {
   return new Promise((resolve, reject) => {
@@ -69,7 +73,12 @@ async function runChatTests() {
     await Channel.deleteMany({});
     await Message.deleteMany({});
 
-    server = app.listen(PORT);
+    server = http.createServer(app);
+    ioServer = new Server(server, { cors: { origin: '*' } });
+    app.set('io', ioServer);
+    setupSocketHandler(ioServer);
+
+    await new Promise((resolve) => server.listen(PORT, resolve));
     console.log(`[Test Server] Listening on port ${PORT}`);
 
     // Create 2 test users: User A and User B
@@ -81,7 +90,6 @@ async function runChatTests() {
     });
     assert.strictEqual(userA.status, 201);
     const tokenA = userA.body.token;
-    const userIdA = userA.body.user._id;
 
     const userB = await request('POST', '/api/auth/signup', {
       name: 'User B',
@@ -90,23 +98,22 @@ async function runChatTests() {
       password: 'password123',
     });
     assert.strictEqual(userB.status, 201);
-    const tokenB = userB.body.token;
     const userIdB = userB.body.user._id;
 
-    // Test 1: Create public channel
+    // Test 1: Create group channel
     testCount++;
-    console.log(`\nTest ${testCount}: Create public topic channel`);
+    console.log(`\nTest ${testCount}: Create group channel with member validation`);
     const chanRes = await request(
       'POST',
       '/api/channels',
-      { name: 'engineering-hub', description: 'Engineering discussion' },
+      { name: 'engineering-hub', description: 'Engineering discussion', memberIds: [userIdB] },
       tokenA
     );
     assert.strictEqual(chanRes.status, 201);
     assert.strictEqual(chanRes.body.channel.name, 'engineering-hub');
     assert.strictEqual(chanRes.body.channel.isDM, false);
     const publicChannelId = chanRes.body.channel._id;
-    console.log('✓ Passed: Public channel created successfully.');
+    console.log('✓ Passed: Group channel created successfully.');
     passCount++;
 
     // Test 2: Create 1:1 Direct Message channel
@@ -130,9 +137,9 @@ async function runChatTests() {
     console.log('✓ Passed: Channel list retrieved with populated members.');
     passCount++;
 
-    // Test 4: Post text message in public channel
+    // Test 4: Post text message in channel
     testCount++;
-    console.log(`\nTest ${testCount}: Post text message in public channel`);
+    console.log(`\nTest ${testCount}: Post text message in channel`);
     const msg1Res = await request(
       'POST',
       `/api/channels/${publicChannelId}/messages`,
@@ -171,8 +178,7 @@ async function runChatTests() {
 
     // Test 7: Block unauthorized non-member from viewing DM messages
     testCount++;
-    console.log(`\nTest ${testCount}: Prevent unauthorized access to DM thread`);
-    // Create User C (not part of User A & B DM)
+    console.log(`\nTest ${testCount}: Prevent unauthorized access to DM thread (GET)`);
     const userC = await request('POST', '/api/auth/signup', {
       name: 'User C',
       username: 'userc_chat',
@@ -183,8 +189,81 @@ async function runChatTests() {
 
     const unauthRes = await request('GET', `/api/channels/${dmChannelId}/messages`, null, tokenC);
     assert.strictEqual(unauthRes.status, 403);
-    assert.strictEqual(unauthRes.body.message, 'Not authorized to view messages in this DM.');
+    assert.strictEqual(unauthRes.body.message, 'Not a member of this chat.');
     console.log('✓ Passed: Unauthorized access to DM thread blocked with 403.');
+    passCount++;
+
+    // Test 8: Block non-member from posting messages (POST /api/channels/:id/messages -> 403)
+    testCount++;
+    console.log(`\nTest ${testCount}: Prevent non-member from posting messages (POST)`);
+    const nonMemberPostRes = await request(
+      'POST',
+      `/api/channels/${dmChannelId}/messages`,
+      { content: 'Hacking into DM thread' },
+      tokenC
+    );
+    assert.strictEqual(nonMemberPostRes.status, 403);
+    assert.strictEqual(nonMemberPostRes.body.message, 'Not a member of this chat.');
+    console.log('✓ Passed: Non-member POST message blocked with 403.');
+    passCount++;
+
+    // Test 9: Forward message across non-member channels -> 403
+    testCount++;
+    console.log(`\nTest ${testCount}: Prevent forward message across non-member channels`);
+    const fwdRes = await request(
+      'POST',
+      `/api/messages/${msg1Res.body.message._id}/forward`,
+      { targetChannelId: dmChannelId, encryptedContent: 'forged forward' },
+      tokenC
+    );
+    assert.strictEqual(fwdRes.status, 403);
+    assert.strictEqual(fwdRes.body.message, 'Not authorized.');
+    console.log('✓ Passed: Forward across non-member channel blocked with 403.');
+    passCount++;
+
+    // Test 10: DM initiator cannot delete recipient's message -> 403
+    testCount++;
+    console.log(`\nTest ${testCount}: DM initiator cannot delete recipient message`);
+    const tokenB = userB.body.token;
+    const msgFromB = await request(
+      'POST',
+      `/api/channels/${dmChannelId}/messages`,
+      { content: 'User B reply message' },
+      tokenB
+    );
+    assert.strictEqual(msgFromB.status, 201);
+    const msgFromBId = msgFromB.body.message._id;
+
+    // User A (DM initiator) attempts to delete User B's message
+    const delRes = await request('DELETE', `/api/messages/${msgFromBId}`, null, tokenA);
+    assert.strictEqual(delRes.status, 403);
+    assert.strictEqual(delRes.body.message, 'Not authorized to delete this message.');
+    console.log('✓ Passed: DM initiator blocked from deleting recipient message with 403.');
+    passCount++;
+
+    // Test 11: Non-member socket channel:join receives no message:new
+    testCount++;
+    console.log(`\nTest ${testCount}: Non-member socket channel:join receives no message:new`);
+    const clientSocketC = ioClient(`http://localhost:${PORT}`, {
+      auth: { token: tokenC },
+      transports: ['websocket'],
+    });
+
+    await new Promise((resolve) => clientSocketC.on('connect', resolve));
+    clientSocketC.emit('channel:join', { channelId: dmChannelId });
+
+    let messageReceivedByC = false;
+    clientSocketC.on('message:new', () => {
+      messageReceivedByC = true;
+    });
+
+    // Send a message in DM channel by member User A
+    await request('POST', `/api/channels/${dmChannelId}/messages`, { content: 'Secret DM content' }, tokenA);
+
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    assert.strictEqual(messageReceivedByC, false);
+    clientSocketC.disconnect();
+    console.log('✓ Passed: Non-member socket received no message:new after channel:join.');
     passCount++;
 
     console.log(`\n========================================`);
@@ -198,6 +277,7 @@ async function runChatTests() {
     console.error('\n❌ Chat unit tests failed with error:', err);
     process.exitCode = 1;
   } finally {
+    if (ioServer) ioServer.close();
     if (server) server.close();
     await mongoose.disconnect();
   }

@@ -218,7 +218,7 @@ function MessageItem({
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
             </button>
             <button
-              onClick={() => onOpenForwardModal(msg, decryptedText)}
+              onClick={() => onOpenForwardModal(msg, decryptedText, decryptedImage)}
               title="Forward message"
               className="p-1 rounded-lg text-slate-500 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-slate-700 transition-colors"
             >
@@ -265,23 +265,25 @@ export default function MessageThread({
   const [activeLightboxImg, setActiveLightboxImg] = useState(null);
   const [forwardModalMsg, setForwardModalMsg] = useState(null);
   const [forwardText, setForwardText] = useState('');
+  const [forwardImage, setForwardImage] = useState('');
   const [selectedTargetChannelId, setSelectedTargetChannelId] = useState('');
   const { showToast } = useToast();
 
-  const handleOpenForwardModal = (msg, decryptedText) => {
+  const handleOpenForwardModal = (msg, decryptedText, decryptedImage) => {
     setForwardModalMsg(msg);
-    setForwardText(decryptedText);
+    setForwardText(decryptedText || '');
+    setForwardImage(decryptedImage || '');
     setSelectedTargetChannelId('');
   };
 
   const handleSendForward = async () => {
     if (!forwardModalMsg || !selectedTargetChannelId) return;
     try {
-      await onForwardMessage(forwardModalMsg._id, selectedTargetChannelId, forwardText);
+      await onForwardMessage(forwardModalMsg._id, selectedTargetChannelId, forwardText, forwardImage);
       showToast('Message forwarded successfully!', 'success');
       setForwardModalMsg(null);
     } catch (e) {
-      showToast('Failed to forward message', 'error');
+      showToast(e.message || 'Failed to forward message', 'error');
     }
   };
 
@@ -383,11 +385,11 @@ export default function MessageThread({
         </div>
       )}
 
-      {/* End-to-End Encryption Security Banner */}
+      {/* Encryption Security Banner */}
       <div className="flex justify-center my-2">
         <div className="px-3.5 py-1.5 rounded-full bg-emerald-50/80 dark:bg-emerald-950/60 border border-emerald-200/40 dark:border-emerald-800/40 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 flex items-center space-x-1.5 shadow-xs">
           <Lock className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 shrink-0" />
-          <span>Messages & calls are end-to-end encrypted.</span>
+          <span>Messages are encrypted in transit.</span>
         </div>
       </div>
 
