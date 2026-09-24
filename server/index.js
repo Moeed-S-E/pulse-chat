@@ -7,6 +7,7 @@ const morgan = require('morgan');
 const path = require('path');
 const fs = require('fs');
 const { Server } = require('socket.io');
+const rateLimit = require('express-rate-limit');
 
 dotenv.config();
 
@@ -27,22 +28,27 @@ const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 // Parse configured origins (supports single or comma-separated URLs)
 const configuredOrigins = CLIENT_URL.split(',').map((url) => url.trim()).filter(Boolean);
 
+// CORS callback — exact configured origins or local origins only
 const isOriginAllowed = (origin, callback) => {
-  // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
   if (!origin) return callback(null, true);
-
   const isExplicit = configuredOrigins.includes(origin);
-  const isLocal = origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1');
-  const isVercel = /\.vercel\.app$/.test(origin);
-  const isRender = /\.onrender\.com$/.test(origin);
+  const isLocal = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
 
-  if (isExplicit || isLocal || isVercel || isRender) {
+  if (isExplicit || isLocal) {
     return callback(null, true);
   }
 
-  // Allow all origins by default in production to ensure cross-origin Vercel deployments succeed seamlessly
-  return callback(null, true);
+  return callback(new Error('Not allowed by CORS'));
 };
+
+// Rate limiter for Auth endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many auth requests from this IP, please try again after 15 minutes.' },
+});
 
 // Morgan HTTP request logging streamed through Winston logger
 const morganStream = {
@@ -51,25 +57,24 @@ const morganStream = {
 app.use(morgan('combined', { stream: morganStream }));
 
 // Middleware
+app.set('trust proxy', 1);
 app.use(cors({
   origin: isOriginAllowed,
   credentials: true,
 }));
-app.use(express.json({ limit: '25mb' }));
-app.use(express.urlencoded({ limit: '25mb', extended: true }));
 
-// API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/channels', channelRoutes);
-app.use('/api/channels', channelMessages);
-app.use('/api/messages', messageOps);
-app.use('/api/calls', callRoutes);
+// Route-specific body parsers & limits
+app.use('/api/auth', express.json({ limit: '20kb' }), authLimiter, authRoutes);
+app.use('/api/users', express.json({ limit: '20kb' }), userRoutes);
+app.use('/api/calls', express.json({ limit: '20kb' }), callRoutes);
+app.use('/api/channels', express.json({ limit: '12mb' }), channelRoutes, channelMessages);
+app.use('/api/messages', express.json({ limit: '12mb' }), messageOps);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
+  const dbOk = mongoose.connection.readyState === 1;
+  res.status(dbOk ? 200 : 503).json({
+    status: dbOk ? 'ok' : 'db_down',
     service: 'PulseChat API',
     timestamp: new Date(),
     environment: process.env.NODE_ENV || 'development',
@@ -93,7 +98,7 @@ const io = new Server(server, {
     methods: ['GET', 'POST'],
     credentials: true,
   },
-  maxHttpBufferSize: 25 * 1024 * 1024,
+  maxHttpBufferSize: 12 * 1024 * 1024,
 });
 
 app.set('io', io);
@@ -101,18 +106,16 @@ setupSocketHandler(io);
 
 // MongoDB connection & server start
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/pulsechat';
+const maskPassword = (uri) => uri.replace(/\/\/([^:@/]+):([^@]+)@/, '//$1:***@');
 
 mongoose.connect(MONGODB_URI)
   .then(() => {
-    logger.info(`[Database] Connected to MongoDB at: ${MONGODB_URI}`);
+    logger.info(`[Database] Connected to MongoDB at: ${maskPassword(MONGODB_URI)}`);
     server.listen(PORT, () => {
       logger.info(`[Server] PulseChat server running on http://localhost:${PORT}`);
     });
   })
   .catch((err) => {
     logger.error(`[Database] Connection error: ${err.message}`);
-    logger.info('[Server] Starting server without MongoDB for dev testing...');
-    server.listen(PORT, () => {
-      logger.info(`[Server] PulseChat server running on http://localhost:${PORT}`);
-    });
+    process.exit(1);
   });

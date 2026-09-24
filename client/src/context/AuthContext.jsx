@@ -42,6 +42,17 @@ export const AuthProvider = ({ children }) => {
     fetchMe();
   }, [token]);
 
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      logout();
+    };
+
+    window.addEventListener('pulse:unauthorized', handleUnauthorized);
+    return () => {
+      window.removeEventListener('pulse:unauthorized', handleUnauthorized);
+    };
+  }, []);
+
   const login = async (loginIdentifier, password) => {
     const res = await apiFetch('/api/auth/login', {
       method: 'POST',

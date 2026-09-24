@@ -5,10 +5,11 @@ const Message = require('../models/Message');
 const Channel = require('../models/Channel');
 const CallLog = require('../models/CallLog');
 const logger = require('../utils/logger');
-const { getMemberChannel, emitToMembers } = require('../utils/access');
 
 const MAX_MEDIA_CHARS = 10_000_000;
 const activeSockets = new Map(); // userId -> Set of socketIds
+const activeCalls = new Map(); // userId -> peerUserId (1:1 calls)
+const ROOM_RE = /^[A-Z0-9-]{6,40}$/;
 
 const setupSocketHandler = (io) => {
   // Socket.io middleware for JWT authentication
@@ -19,7 +20,7 @@ const setupSocketHandler = (io) => {
         return next(new Error('Authentication error: Token missing'));
       }
 
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'pulsechat_secret_key_dev_2026_super_secure');
+      const decoded = jwt.verify(token, JWT_SECRET);
       socket.userId = decoded.id;
       socket.username = decoded.username;
       next();
@@ -148,7 +149,7 @@ const setupSocketHandler = (io) => {
     // --- 1:1 WebRTC Call Signaling ---
 
     // Outgoing call invite from caller -> callee
-    socket.on('call:invite', async ({ targetUserId, channelId, callerInfo }) => {
+    socket.on('call:invite', async ({ targetUserId, channelId, callerInfo, callType }) => {
       logger.info(`[Call:WebSocket] Invite sent from ${socket.username} (${userId}) to target ${targetUserId}`);
 
       const targetRoom = io.sockets.adapter.rooms.get(`user:${targetUserId}`);
@@ -164,14 +165,22 @@ const setupSocketHandler = (io) => {
 
       io.to(`user:${targetUserId}`).emit('call:incoming', {
         callerUserId: userId,
-        callerInfo: callerInfo || { id: userId, username: socket.username, name: socket.username },
+        callerInfo: {
+          id: userId,
+          username: socket.username,
+          name: callerInfo?.name || socket.username,
+          avatarInitial: callerInfo?.avatarInitial,
+        },
         channelId,
+        callType: callType === 'audio' ? 'audio' : 'video',
       });
     });
 
     // Callee accepts call
     socket.on('call:accept', ({ callerUserId, channelId }) => {
       logger.info(`[Call:WebSocket] Accepted by ${socket.username} for caller ${callerUserId}`);
+      activeCalls.set(userId, callerUserId);
+      activeCalls.set(callerUserId, userId);
       io.to(`user:${callerUserId}`).emit('call:accepted', {
         acceptorUserId: userId,
         channelId,
@@ -202,6 +211,24 @@ const setupSocketHandler = (io) => {
       });
     });
 
+    // Caller cancels call or ringing times out
+    socket.on('call:cancel', async ({ targetUserId, channelId, callType, reason }) => {
+      logger.info(`[Call] Cancelled by ${socket.username} for target ${targetUserId}`);
+      io.to(`user:${targetUserId}`).emit('call:cancelled', { fromUserId: userId, channelId });
+      try {
+        await CallLog.create({
+          callerId: userId,
+          receiverId: targetUserId,
+          channelId: channelId || null,
+          callType: callType === 'audio' ? 'audio' : 'video',
+          status: reason === 'timeout' ? 'no_answer' : 'missed',
+          duration: '00:00',
+        });
+      } catch (e) {
+        logger.error('CallLog cancel error', e);
+      }
+    });
+
     // Relay WebRTC offer
     socket.on('webrtc:offer', ({ targetUserId, offer }) => {
       io.to(`user:${targetUserId}`).emit('webrtc:offer', {
@@ -227,15 +254,18 @@ const setupSocketHandler = (io) => {
     });
 
     // End Call & log system call message & DB CallLog
-    socket.on('call:end', async ({ targetUserId, channelId, duration }) => {
+    socket.on('call:end', async ({ targetUserId, channelId, callType, duration }) => {
       logger.info(`[Call] Ended by ${socket.username} in channel ${channelId}, duration: ${duration}`);
+
+      activeCalls.delete(userId);
+      if (targetUserId) activeCalls.delete(targetUserId);
 
       try {
         await CallLog.create({
           callerId: userId,
           receiverId: targetUserId || null,
           channelId: channelId || null,
-          callType: 'video',
+          callType: callType === 'audio' ? 'audio' : 'video',
           status: 'completed',
           duration: duration || '00:00',
         });
@@ -253,165 +283,176 @@ const setupSocketHandler = (io) => {
       // Log system call message in chat thread if channelId exists
       if (channelId) {
         try {
-          const channel = await getMemberChannel(channelId, userId);
-          if (channel) {
-            const callMsg = new Message({
-              channelId,
-              senderId: userId,
-              content: `Video call ended · ${duration || '00:00'}`,
-              messageType: 'system_call',
-              callDuration: duration || '00:00',
-            });
+          const callMsg = new Message({
+            channelId,
+            senderId: userId,
+            content: `Video call ended · ${duration || '00:00'}`,
+            messageType: 'system_call',
+            callDuration: duration || '00:00',
+          });
 
-            await callMsg.save();
-            await callMsg.populate('senderId', 'name username avatarInitial avatarColor bio isOnline');
+          await callMsg.save();
+          await callMsg.populate('senderId', 'name username avatarInitial avatarColor bio isOnline');
 
-            await Channel.findByIdAndUpdate(channelId, { updatedAt: new Date() });
+          await Channel.findByIdAndUpdate(channelId, { updatedAt: new Date() });
 
-            io.to(`channel:${channelId}`).emit('message:new', callMsg);
-            emitToMembers(io, channel, 'channel:last_message', { channelId, lastMessage: callMsg });
-          }
-        } catch (err) {
-          logger.error('Error logging system call message:', err);
+          io.to(`channel:${channelId}`).emit('message:new', callMsg);
+          emitToMembers(io, channel, 'channel:last_message', { channelId, lastMessage: callMsg });
         }
+        } catch (err) {
+        logger.error('Error logging system call message:', err);
       }
+    }
     });
 
-    // --- Meeting Room Code WebRTC Signaling (1:M Multi-Peer Mesh) ---
+  // --- Meeting Room Code WebRTC Signaling (1:M Multi-Peer Mesh) ---
 
-    socket.on('meeting:join', async ({ roomCode }) => {
-      if (!roomCode) return;
-      const cleanCode = roomCode.toUpperCase().trim();
-      const roomName = `meeting:${cleanCode}`;
+  socket.on('meeting:join', async ({ roomCode }) => {
+    if (!roomCode) return;
+    const cleanCode = roomCode.toUpperCase().trim();
+    if (!ROOM_RE.test(cleanCode)) {
+      return socket.emit('error', { message: 'Invalid room code format.' });
+    }
+    const roomName = `meeting:${cleanCode}`;
 
-      // Get existing room sockets before joining
-      const socketsInRoom = await io.in(roomName).fetchSockets();
-      const existingPeers = socketsInRoom
-        .filter((s) => s.userId !== userId)
-        .map((s) => ({
-          userId: s.userId,
-          username: s.username,
-        }));
+    // Get existing room sockets before joining
+    const socketsInRoom = await io.in(roomName).fetchSockets();
+    const existingPeers = socketsInRoom
+      .filter((s) => s.userId !== userId)
+      .map((s) => ({
+        userId: s.userId,
+        username: s.username,
+      }));
 
-      socket.join(roomName);
-      socket.currentMeetingRoom = cleanCode;
-      console.log(`[Meeting Room] ${socket.username} (${userId}) joined code room ${cleanCode}`);
+    socket.join(roomName);
+    socket.currentMeetingRoom = cleanCode;
+    console.log(`[Meeting Room] ${socket.username} (${userId}) joined code room ${cleanCode}`);
 
-      // Send existing participants list to the joining user
-      socket.emit('meeting:existing_peers', {
-        roomCode: cleanCode,
-        existingPeers,
-      });
-
-      // Notify existing participants about the new peer
-      socket.to(roomName).emit('meeting:peer_joined', {
-        userId,
-        username: socket.username,
-        roomCode: cleanCode,
-      });
+    // Send existing participants list to the joining user
+    socket.emit('meeting:existing_peers', {
+      roomCode: cleanCode,
+      existingPeers,
     });
 
-    socket.on('meeting:webrtc:offer', ({ roomCode, targetUserId, offer }) => {
-      if (!roomCode) return;
-      const payload = {
-        fromUserId: userId,
-        fromUsername: socket.username,
-        offer,
-      };
-
-      if (targetUserId) {
-        io.to(`user:${targetUserId}`).emit('meeting:webrtc:offer', payload);
-      } else {
-        socket.to(`meeting:${roomCode.toUpperCase().trim()}`).emit('meeting:webrtc:offer', payload);
-      }
+    // Notify existing participants about the new peer
+    socket.to(roomName).emit('meeting:peer_joined', {
+      userId,
+      username: socket.username,
+      roomCode: cleanCode,
     });
+  });
 
-    socket.on('meeting:webrtc:answer', ({ roomCode, targetUserId, answer }) => {
-      if (!roomCode) return;
-      const payload = {
-        fromUserId: userId,
-        fromUsername: socket.username,
-        answer,
-      };
+  socket.on('meeting:webrtc:offer', ({ roomCode, targetUserId, offer }) => {
+    const cleanCode = (roomCode || '').toUpperCase().trim();
+    if (!cleanCode || socket.currentMeetingRoom !== cleanCode) return;
+    const payload = {
+      fromUserId: userId,
+      fromUsername: socket.username,
+      offer,
+    };
 
-      if (targetUserId) {
-        io.to(`user:${targetUserId}`).emit('meeting:webrtc:answer', payload);
-      } else {
-        socket.to(`meeting:${roomCode.toUpperCase().trim()}`).emit('meeting:webrtc:answer', payload);
-      }
+    if (targetUserId) {
+      io.to(`user:${targetUserId}`).emit('meeting:webrtc:offer', payload);
+    } else {
+      socket.to(`meeting:${cleanCode}`).emit('meeting:webrtc:offer', payload);
+    }
+  });
+
+  socket.on('meeting:webrtc:answer', ({ roomCode, targetUserId, answer }) => {
+    const cleanCode = (roomCode || '').toUpperCase().trim();
+    if (!cleanCode || socket.currentMeetingRoom !== cleanCode) return;
+    const payload = {
+      fromUserId: userId,
+      fromUsername: socket.username,
+      answer,
+    };
+
+    if (targetUserId) {
+      io.to(`user:${targetUserId}`).emit('meeting:webrtc:answer', payload);
+    } else {
+      socket.to(`meeting:${cleanCode}`).emit('meeting:webrtc:answer', payload);
+    }
+  });
+
+  socket.on('meeting:webrtc:ice-candidate', ({ roomCode, targetUserId, candidate }) => {
+    const cleanCode = (roomCode || '').toUpperCase().trim();
+    if (!cleanCode || socket.currentMeetingRoom !== cleanCode) return;
+    const payload = {
+      fromUserId: userId,
+      candidate,
+    };
+
+    if (targetUserId) {
+      io.to(`user:${targetUserId}`).emit('meeting:webrtc:ice-candidate', payload);
+    } else {
+      socket.to(`meeting:${cleanCode}`).emit('meeting:webrtc:ice-candidate', payload);
+    }
+  });
+
+  // Invite user to a room call
+  socket.on('call:invite:room', ({ targetUserId, roomCode }) => {
+    if (!targetUserId || !roomCode) return;
+    logger.info(`[Call:WebSocket] Room invite sent from ${socket.username} to ${targetUserId} for room ${roomCode}`);
+    io.to(`user:${targetUserId}`).emit('meeting:incoming_invite', {
+      roomCode,
+      inviterInfo: { id: userId, username: socket.username, name: socket.username },
     });
+  });
 
-    socket.on('meeting:webrtc:ice-candidate', ({ roomCode, targetUserId, candidate }) => {
-      if (!roomCode) return;
-      const payload = {
-        fromUserId: userId,
-        candidate,
-      };
-
-      if (targetUserId) {
-        io.to(`user:${targetUserId}`).emit('meeting:webrtc:ice-candidate', payload);
-      } else {
-        socket.to(`meeting:${roomCode.toUpperCase().trim()}`).emit('meeting:webrtc:ice-candidate', payload);
-      }
+  socket.on('meeting:leave', ({ roomCode }) => {
+    const cleanCode = (roomCode || socket.currentMeetingRoom || '').toUpperCase().trim();
+    if (!cleanCode) return;
+    socket.leave(`meeting:${cleanCode}`);
+    socket.currentMeetingRoom = null;
+    socket.to(`meeting:${cleanCode}`).emit('meeting:peer_left', {
+      userId,
+      username: socket.username,
     });
+    logger.info(`[Meeting 1:M] ${socket.username} (${userId}) left meeting room ${cleanCode}`);
+  });
 
-    // Invite user to a room call
-    socket.on('call:invite:room', ({ targetUserId, roomCode }) => {
-      if (!targetUserId || !roomCode) return;
-      logger.info(`[Call:WebSocket] Room invite sent from ${socket.username} to ${targetUserId} for room ${roomCode}`);
-      io.to(`user:${targetUserId}`).emit('meeting:incoming_invite', {
-        roomCode,
-        inviterInfo: { id: userId, username: socket.username, name: socket.username },
-      });
-    });
+  // Disconnect handling
+  socket.on('disconnect', () => {
+    console.log(`[Socket] User disconnected: ${socket.username} (${userId})`);
 
-    socket.on('meeting:leave', ({ roomCode }) => {
-      const cleanCode = (roomCode || socket.currentMeetingRoom || '').toUpperCase().trim();
-      if (!cleanCode) return;
-      socket.leave(`meeting:${cleanCode}`);
-      socket.currentMeetingRoom = null;
+    if (socket.currentMeetingRoom) {
+      const cleanCode = socket.currentMeetingRoom;
       socket.to(`meeting:${cleanCode}`).emit('meeting:peer_left', {
         userId,
         username: socket.username,
       });
-      logger.info(`[Meeting 1:M] ${socket.username} (${userId}) left meeting room ${cleanCode}`);
-    });
+      socket.currentMeetingRoom = null;
+    }
 
-    // Disconnect handling
-    socket.on('disconnect', () => {
-      console.log(`[Socket] User disconnected: ${socket.username} (${userId})`);
+    const userSockets = activeSockets.get(userId);
 
-      if (socket.currentMeetingRoom) {
-        const cleanCode = socket.currentMeetingRoom;
-        socket.to(`meeting:${cleanCode}`).emit('meeting:peer_left', {
-          userId,
-          username: socket.username,
-        });
-        socket.currentMeetingRoom = null;
-      }
+    if (userSockets) {
+      userSockets.delete(socket.id);
+      if (userSockets.size === 0) {
+        activeSockets.delete(userId);
 
-      const userSockets = activeSockets.get(userId);
-
-      if (userSockets) {
-        userSockets.delete(socket.id);
-        if (userSockets.size === 0) {
-          activeSockets.delete(userId);
-
-          // Grace period timeout before marking offline
-          setTimeout(async () => {
-            if (!activeSockets.has(userId) && mongoose.connection.readyState === 1) {
-              try {
-                await User.findByIdAndUpdate(userId, { isOnline: false, lastSeen: new Date() });
-                io.emit('presence:update', { userId, isOnline: false });
-              } catch (err) {
-                console.error('Error updating offline status:', err);
-              }
-            }
-          }, 1000);
+        const peer = activeCalls.get(userId);
+        if (peer) {
+          activeCalls.delete(userId);
+          activeCalls.delete(peer);
+          io.to(`user:${peer}`).emit('call:ended', { endedByUserId: userId, duration: '00:00' });
         }
+
+        // Grace period timeout before marking offline
+        setTimeout(async () => {
+          if (!activeSockets.has(userId) && mongoose.connection.readyState === 1) {
+            try {
+              await User.findByIdAndUpdate(userId, { isOnline: false, lastSeen: new Date() });
+              io.emit('presence:update', { userId, isOnline: false });
+            } catch (err) {
+              console.error('Error updating offline status:', err);
+            }
+          }
+        }, 1000);
       }
-    });
+    }
   });
+});
 };
 
 module.exports = setupSocketHandler;

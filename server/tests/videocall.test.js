@@ -67,15 +67,21 @@ async function runVideoCallTests() {
     await mongoose.connect(MONGODB_URI);
     console.log('[Test DB] Connected to MongoDB test database.');
 
+    const dbName = mongoose.connection.db.databaseName;
+    if (!dbName.endsWith('test')) {
+      throw new Error(`[Test Safety] Refusing to run tests on non-test DB "${dbName}".`);
+    }
+
     await User.deleteMany({ email: /@calltest\.com$/ });
+    await Channel.deleteMany({});
+    await Message.deleteMany({});
 
     server = app.listen(PORT);
     console.log(`[Test Server] Listening on port ${PORT}`);
 
-    // Create Caller & Callee users
     const callerRes = await request('POST', '/api/auth/signup', {
       name: 'Caller User',
-      username: 'caller_john',
+      username: 'caller_host',
       email: 'caller@calltest.com',
       password: 'password123',
     });
@@ -84,19 +90,19 @@ async function runVideoCallTests() {
 
     const calleeRes = await request('POST', '/api/auth/signup', {
       name: 'Callee User',
-      username: 'callee_jane',
+      username: 'callee_peer',
       email: 'callee@calltest.com',
       password: 'password123',
     });
     assert.strictEqual(calleeRes.status, 201);
 
-    // Test 1: Resolve Target User ID by @username for Direct Video Call
+    // Test 1: User search by @username
     testCount++;
     console.log(`\nTest ${testCount}: Lookup user by @username for direct video call`);
-    const searchRes = await request('GET', '/api/users/search?q=callee_jane', null, callerToken);
+    const searchRes = await request('GET', '/api/users/search?q=callee_peer', null, callerToken);
     assert.strictEqual(searchRes.status, 200);
     assert.ok(searchRes.body.users.length > 0);
-    assert.strictEqual(searchRes.body.users[0].username, 'callee_jane');
+    assert.strictEqual(searchRes.body.users[0].username, 'callee_peer');
     console.log('✓ Passed: Resolved target user by @username handle.');
     passCount++;
 
@@ -132,6 +138,8 @@ async function runVideoCallTests() {
     console.log(`========================================\n`);
 
     await User.deleteMany({ email: /@calltest\.com$/ });
+    await Channel.deleteMany({});
+    await Message.deleteMany({});
   } catch (err) {
     console.error('\n❌ Video call test failed:', err);
     process.exitCode = 1;

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 
 export default function Modal({
@@ -9,12 +9,28 @@ export default function Modal({
   children,
   maxWidth = 'max-w-lg',
 }) {
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e) => e.key === 'Escape' && onClose?.();
+    document.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 animate-fade-in">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 animate-fade-in"
+    >
       <div
-        className={`w-full ${maxWidth} bg-white dark:bg-[#1E293B] text-slate-900 dark:text-slate-100 rounded-3xl p-6 shadow-2xl border border-slate-100 dark:border-slate-700/60 relative overflow-hidden`}
+        onClick={(e) => e.stopPropagation()}
+        className={`w-full ${maxWidth} max-h-[90dvh] flex flex-col overflow-y-auto bg-white dark:bg-[#1E293B] text-slate-900 dark:text-slate-100 rounded-3xl p-6 shadow-2xl border border-slate-100 dark:border-slate-700/60 relative`}
       >
         {/* Modal Header */}
         <div className="flex items-center justify-between mb-4">

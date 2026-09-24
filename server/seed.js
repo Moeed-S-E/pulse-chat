@@ -16,6 +16,12 @@ async function seedDatabase() {
     await mongoose.connect(MONGODB_URI);
     console.log(`[DB] Connected to MongoDB database at: ${MONGODB_URI}`);
 
+    const dbName = mongoose.connection.db.databaseName;
+    if (process.env.ALLOW_SEED !== '1' || !dbName.endsWith('test')) {
+      console.error(`[DB] Safety guard: Refusing to seed database "${dbName}". ALLOW_SEED=1 and a database name ending in "test" are required.`);
+      process.exit(1);
+    }
+
     // Clear existing collections
     await User.deleteMany({});
     await Channel.deleteMany({});

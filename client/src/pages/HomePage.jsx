@@ -15,7 +15,6 @@ import { decryptMessage } from '../utils/crypto';
 import {
   playMessageNotificationSound,
   showDesktopNotification,
-  requestNotificationPermission,
 } from '../utils/soundEffects';
 
 export default function HomePage() {
@@ -82,10 +81,12 @@ export default function HomePage() {
     fetchChannels();
   }, [token]);
 
-  // In HomePage component:
-  useEffect(() => {
-    requestNotificationPermission();
-  }, []);
+
+  const channelsRef = useRef(channels);
+  useEffect(() => { channelsRef.current = channels; }, [channels]);
+
+  const selectedChannelRef = useRef(selectedChannel);
+  useEffect(() => { selectedChannelRef.current = selectedChannel; }, [selectedChannel]);
 
   const channelsRef = useRef(channels);
   useEffect(() => { channelsRef.current = channels; }, [channels]);

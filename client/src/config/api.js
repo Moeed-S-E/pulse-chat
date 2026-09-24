@@ -14,8 +14,12 @@ export const getApiUrl = (endpoint) => {
   return `${API_BASE_URL}${path}`;
 };
 
-export const apiFetch = (endpoint, options) => {
-  return fetch(getApiUrl(endpoint), options);
+export const apiFetch = async (endpoint, options) => {
+  const res = await fetch(getApiUrl(endpoint), options);
+  if (res.status === 401 && typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('pulse:unauthorized'));
+  }
+  return res;
 };
 
 // Immediate background server warmup for Render cold starts

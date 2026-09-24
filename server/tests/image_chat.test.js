@@ -65,6 +65,11 @@ async function runImageChatTests() {
     await mongoose.connect(MONGODB_URI);
     console.log('[Test DB] Connected to MongoDB test database.');
 
+    const dbName = mongoose.connection.db.databaseName;
+    if (!dbName.endsWith('test')) {
+      throw new Error(`[Test Safety] Refusing to run tests on non-test DB "${dbName}".`);
+    }
+
     await User.deleteMany({ email: /@imgtest\.com$/ });
     await Channel.deleteMany({ name: 'image-lounge' });
 

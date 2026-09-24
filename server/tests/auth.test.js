@@ -58,6 +58,11 @@ async function runTests() {
     await mongoose.connect(MONGODB_URI);
     console.log('[Test DB] Connected to MongoDB test database.');
 
+    const dbName = mongoose.connection.db.databaseName;
+    if (!dbName.endsWith('test')) {
+      throw new Error(`[Test Safety] Refusing to run tests on non-test DB "${dbName}".`);
+    }
+
     // Clear test users
     await User.deleteMany({ email: /@testdomain\.com$/ });
 
