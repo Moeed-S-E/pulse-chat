@@ -105,7 +105,7 @@ function MessageItem({
   if (isSystemCall) {
     const isAudio = msg.content?.includes('voice');
     return (
-      <div className="flex justify-center my-3">
+      <div className="flex justify-center my-3 animate-msg-in">
         <div className="px-4 py-2 rounded-2xl bg-white dark:bg-[#1E293B] border border-slate-200/80 dark:border-slate-700/80 shadow-sm flex items-center space-x-2 text-xs font-bold text-slate-700 dark:text-slate-200">
           {isAudio ? <Phone className="w-4 h-4 text-emerald-500 dark:text-emerald-400" /> : <Video className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />}
           <span>{decryptedText}</span>
@@ -121,7 +121,7 @@ function MessageItem({
   }
 
   return (
-    <div ref={itemRef} className={`flex items-end space-x-2 group relative ${isMe ? 'justify-end' : 'justify-start'}`}>
+    <div ref={itemRef} className={`flex items-end space-x-2 group relative ${isMe ? 'justify-end animate-msg-out' : 'justify-start animate-msg-in'}`}>
       {!isMe && (
         <div className="w-7 h-7 rounded-full pulse-gradient-bg flex items-center justify-center text-white font-bold text-xs shrink-0 mb-1">
           {msg.senderId?.avatarInitial || msg.senderId?.name?.charAt(0) || 'U'}
