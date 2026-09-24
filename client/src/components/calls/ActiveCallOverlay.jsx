@@ -35,7 +35,8 @@ const VideoTile = ({ stream, isLocal, name, username, isMuted, isCameraOff, clas
     }
   };
 
-  const hasVideo = Boolean(stream && !isCameraOff);
+  const hasVideoTracks = stream ? stream.getVideoTracks().length > 0 : false;
+  const hasVideo = Boolean(stream && hasVideoTracks && !isCameraOff);
 
   return (
     <div className={`relative bg-slate-900 rounded-3xl overflow-hidden border border-slate-800/80 w-full h-full min-h-[180px] shadow-2xl flex items-center justify-center group ${className}`}>
@@ -144,7 +145,8 @@ export default function ActiveCallOverlay() {
   const calleeUsername = callInfo?.calleeInfo?.username || mainPeer?.username;
 
   const handleCopyCode = () => {
-    const code = callInfo?.roomCode || 'PULSE-8821';
+    const code = callInfo?.roomCode;
+    if (!code) return;
     navigator.clipboard?.writeText(code);
     setCopiedCode(true);
     showToast(`Copied room code ${code} to clipboard!`, 'success');
@@ -153,7 +155,8 @@ export default function ActiveCallOverlay() {
 
   const handleInviteUser = (u) => {
     setInvitedUserIds((prev) => new Set(prev).add(u._id));
-    const roomCode = callInfo?.roomCode || 'PULSE-8821';
+    const roomCode = callInfo?.roomCode;
+    if (!roomCode) return;
 
     // Emit socket invite event if available
     if (socket) {
@@ -263,8 +266,7 @@ export default function ActiveCallOverlay() {
         <div className="space-y-4">
           <div className="p-3 bg-slate-900 rounded-2xl border border-slate-800 flex items-center justify-between">
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Meeting Room Code</div>
-              <div className="text-sm font-mono font-bold text-emerald-400">{callInfo?.roomCode || 'PULSE-8821'}</div>
+              <div className="text-sm font-mono font-bold text-emerald-400">{callInfo?.roomCode}</div>
             </div>
             <Button onClick={handleCopyCode} variant="secondary" size="sm" className="rounded-xl">
               {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}

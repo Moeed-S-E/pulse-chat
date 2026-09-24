@@ -242,12 +242,19 @@ export const CallProvider = ({ children }) => {
     };
 
     pc.ontrack = (event) => {
-      let stream = event.streams && event.streams[0];
-      if (!stream) {
-        stream = new MediaStream();
-        stream.addTrack(event.track);
-      }
       updateRemoteStreams((prev) => {
+        const existing = prev.find((p) => p.peerId === peerId);
+        let stream;
+
+        if (event.streams && event.streams[0]) {
+          stream = event.streams[0];
+        } else if (existing && existing.stream) {
+          stream = existing.stream;
+          stream.addTrack(event.track);
+        } else {
+          stream = new MediaStream([event.track]);
+        }
+
         const filtered = prev.filter((p) => p.peerId !== peerId);
         return [...filtered, { peerId, username: peerUsername, stream }];
       });
