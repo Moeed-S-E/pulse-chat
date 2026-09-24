@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import { decryptMessage } from '../../utils/crypto';
 import { useToast } from '../../context/ToastContext';
+import Avatar from '../ui/Avatar';
 
 function MessageItem({
   msg,
@@ -286,6 +287,7 @@ function MessageItem({
 }
 
 export default function MessageThread({
+  channel,
   messages,
   currentUser,
   channels = [],
@@ -457,15 +459,22 @@ export default function MessageThread({
 
       {/* Typing Indicator */}
       {typingUsers.size > 0 && (
-        <div className="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400 font-medium pl-2">
-          <div className="px-3 py-2 rounded-2xl bg-[#EFF0F3] dark:bg-[#1E293B] border border-slate-200/60 dark:border-slate-800 flex items-center space-x-1.5">
+        <div className="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400 font-medium pl-2 animate-msg-in">
+          <div className="flex -space-x-2">
+            {Array.from(typingUsers).map((username) => {
+              const member = channel?.memberIds?.find((m) => m.username === username);
+              return member ? (
+                <div key={username} className="ring-2 ring-white dark:ring-slate-900 rounded-full z-10">
+                  <Avatar name={member.name} initial={member.avatarInitial} color={member.avatarColor} size="xs" />
+                </div>
+              ) : null;
+            })}
+          </div>
+          <div className="px-3 py-2 rounded-2xl bg-[#EFF0F3] dark:bg-[#1E293B] border border-slate-200/60 dark:border-slate-800 flex items-center space-x-1.5 ml-1">
             <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" />
             <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce delay-150" />
             <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce delay-300" />
           </div>
-          <span className="text-xs italic">
-            {Array.from(typingUsers).join(', ')} is typing...
-          </span>
         </div>
       )}
 

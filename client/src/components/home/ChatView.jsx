@@ -41,7 +41,6 @@ export default function ChatView({ channel, channels = [], onBack }) {
       setLoading(true);
       setMessages([]);
       setTypingUsers(new Set());
-      setHasMore(true);
 
       try {
         const res = await apiFetch(`/api/channels/${channel._id}/messages?limit=50`, {
@@ -299,6 +298,7 @@ export default function ChatView({ channel, channels = [], onBack }) {
         onBack={onBack}
       />
       <MessageThread
+        channel={channel}
         messages={messages}
         currentUser={user}
         channels={channels}
