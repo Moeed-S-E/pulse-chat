@@ -374,6 +374,7 @@ export const CallProvider = ({ children }) => {
       socket.emit('call:decline', {
         callerUserId: info.targetUserId || info.callerInfo?.id,
         channelId: info.channelId,
+        callType: info.callType || 'video',
       });
     }
     updateCallState('idle');
@@ -420,7 +421,7 @@ export const CallProvider = ({ children }) => {
 
     const handleIncomingCall = ({ callerUserId, callerInfo, channelId, callType }) => {
       if (callStateRef.current !== 'idle') {
-        socket.emit('call:decline', { callerUserId, channelId, reason: 'User is busy on another call.' });
+        socket.emit('call:decline', { callerUserId, channelId, callType: callType || 'video', reason: 'User is busy on another call.' });
         return;
       }
       updateCallInfo({ targetUserId: callerUserId, callerInfo, channelId, callType: callType || 'video' });

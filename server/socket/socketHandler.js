@@ -6,6 +6,7 @@ const Channel = require('../models/Channel');
 const CallLog = require('../models/CallLog');
 const logger = require('../utils/logger');
 const { JWT_SECRET } = require('../config');
+const { getMemberChannel, emitToMembers } = require('../utils/access');
 const MAX_MEDIA_CHARS = 10_000_000;
 const activeSockets = new Map(); // userId -> Set of socketIds
 const activeCalls = new Map(); // userId -> peerUserId (1:1 calls)
@@ -188,7 +189,7 @@ const setupSocketHandler = (io) => {
     });
 
     // Callee declines call
-    socket.on('call:decline', async ({ callerUserId, channelId, reason }) => {
+    socket.on('call:decline', async ({ callerUserId, channelId, reason, callType }) => {
       logger.info(`[Call] Declined by ${socket.username} for caller ${callerUserId}`);
 
       try {
@@ -196,7 +197,7 @@ const setupSocketHandler = (io) => {
           callerId: callerUserId,
           receiverId: userId,
           channelId: channelId || null,
-          callType: 'video',
+          callType: callType === 'audio' ? 'audio' : 'video',
           status: 'declined',
           duration: '00:00',
         });
@@ -283,10 +284,12 @@ const setupSocketHandler = (io) => {
       // Log system call message in chat thread if channelId exists
       if (channelId) {
         try {
+          const channel = await getMemberChannel(channelId, userId);
+
           const callMsg = new Message({
             channelId,
             senderId: userId,
-            content: `Video call ended · ${duration || '00:00'}`,
+            content: `${callType === 'audio' ? 'Voice' : 'Video'} call ended · ${duration || '00:00'}`,
             messageType: 'system_call',
             callDuration: duration || '00:00',
           });
@@ -297,7 +300,9 @@ const setupSocketHandler = (io) => {
           await Channel.findByIdAndUpdate(channelId, { updatedAt: new Date() });
 
           io.to(`channel:${channelId}`).emit('message:new', callMsg);
-          emitToMembers(io, channel, 'channel:last_message', { channelId, lastMessage: callMsg });
+          if (channel) {
+            emitToMembers(io, channel, 'channel:last_message', { channelId, lastMessage: callMsg });
+          }
         } catch (err) {
           logger.error('Error logging system call message:', err);
         }
