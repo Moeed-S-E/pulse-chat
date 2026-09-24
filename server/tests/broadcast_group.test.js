@@ -5,7 +5,7 @@ const assert = require('assert');
 
 const authRoutes = require('../routes/authRoutes');
 const channelRoutes = require('../routes/channelRoutes');
-const messageRoutes = require('../routes/messageRoutes');
+const { channelMessages, messageOps } = require('../routes/messageRoutes');
 const User = require('../models/User');
 const Channel = require('../models/Channel');
 const Message = require('../models/Message');
@@ -14,7 +14,8 @@ const app = express();
 app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/channels', channelRoutes);
-app.use('/api/channels', messageRoutes);
+app.use('/api/channels', channelMessages);
+app.use('/api/messages', messageOps);
 
 const PORT = 5096;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/pulsechat_test';

@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 
 const Channel = require('../models/Channel');
 const User = require('../models/User');
@@ -7,17 +8,14 @@ const authMiddleware = require('../middleware/auth');
 
 const router = express.Router();
 
-// GET /api/channels - List public channels & user DMs / Broadcast channels
+// GET /api/channels - List user member channels (groups, broadcasts, DMs)
 router.get('/', authMiddleware, async (req, res) => {
   try {
     const currentUserId = req.user.id;
 
-    // Fetch channels: public non-DMs OR channels where current user is in memberIds
+    // Fetch ONLY channels where current user is in memberIds
     const channels = await Channel.find({
-      $or: [
-        { isDM: false },
-        { memberIds: currentUserId },
-      ],
+      memberIds: currentUserId,
     })
       .populate('memberIds', 'name username avatarInitial avatarColor isOnline lastSeen')
       .populate('createdBy', 'name username')
@@ -58,13 +56,11 @@ router.post('/', authMiddleware, async (req, res) => {
       return res.status(400).json({ message: 'A group/channel with this name already exists.' });
     }
 
-    // Combine current user with provided memberIds
+    // Validate and combine current user with valid memberIds from DB
+    const validIds = (Array.isArray(memberIds) ? memberIds : []).filter((id) => mongoose.isValidObjectId(id));
+    const foundUsers = await User.find({ _id: { $in: validIds } }).select('_id');
     const membersSet = new Set([req.user.id]);
-    if (Array.isArray(memberIds)) {
-      memberIds.forEach((id) => {
-        if (id) membersSet.add(id.toString());
-      });
-    }
+    foundUsers.forEach((u) => membersSet.add(u._id.toString()));
 
     const channel = new Channel({
       name: normalizedName,
@@ -79,12 +75,13 @@ router.post('/', authMiddleware, async (req, res) => {
     await channel.populate('memberIds', 'name username avatarInitial avatarColor isOnline lastSeen');
     await channel.populate('createdBy', 'name username');
 
-    // Notify all channel members via socket
+    // Make live sockets join room & emit channel:created
     const io = req.app.get('io');
     if (io) {
       channel.memberIds.forEach((m) => {
-        const memberIdStr = typeof m === 'object' ? m._id.toString() : m.toString();
-        io.to(`user:${memberIdStr}`).emit('channel:created', channel);
+        const id = (m._id || m).toString();
+        io.in(`user:${id}`).socketsJoin(`channel:${channel._id}`);
+        io.to(`user:${id}`).emit('channel:created', channel);
       });
     }
 
@@ -95,7 +92,7 @@ router.post('/', authMiddleware, async (req, res) => {
   }
 });
 
-// GET /api/channels/:id - Get single channel
+// GET /api/channels/:id - Get single channel (enforce membership for all channels)
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
     const channel = await Channel.findById(req.params.id)
@@ -106,9 +103,10 @@ router.get('/:id', authMiddleware, async (req, res) => {
       return res.status(404).json({ message: 'Channel not found.' });
     }
 
-    // Check membership for DM channels
-    if (channel.isDM && !channel.memberIds.some((m) => m._id.toString() === req.user.id)) {
-      return res.status(403).json({ message: 'Not authorized to view this DM.' });
+    // Membership check for ALL channel types (DM and group)
+    const isMember = channel.memberIds.some((m) => m._id.toString() === req.user.id);
+    if (!isMember) {
+      return res.status(403).json({ message: 'Not a member of this chat.' });
     }
 
     res.json({ channel });
@@ -117,31 +115,41 @@ router.get('/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// POST /api/channels/:id/join - Join public channel
-router.post('/:id/join', authMiddleware, async (req, res) => {
+// POST /api/channels/:id/leave - Leave non-creator group
+router.post('/:id/leave', authMiddleware, async (req, res) => {
   try {
     const channel = await Channel.findById(req.params.id);
     if (!channel) {
       return res.status(404).json({ message: 'Channel not found.' });
     }
-
     if (channel.isDM) {
-      return res.status(400).json({ message: 'Cannot join a DM channel.' });
+      return res.status(400).json({ message: 'Cannot leave a DM.' });
+    }
+    if (channel.createdBy?.toString() === req.user.id) {
+      return res.status(400).json({ message: 'Creator cannot leave group. Delete the group instead.' });
     }
 
-    if (!channel.memberIds.includes(req.user.id)) {
-      channel.memberIds.push(req.user.id);
-      await channel.save();
+    const isMember = channel.memberIds.some((m) => m.toString() === req.user.id);
+    if (!isMember) {
+      return res.status(400).json({ message: 'You are not a member of this group.' });
     }
 
-    await channel.populate('memberIds', 'name username avatarInitial avatarColor isOnline lastSeen');
-    res.json({ channel });
+    channel.memberIds = channel.memberIds.filter((m) => m.toString() !== req.user.id);
+    await channel.save();
+
+    const io = req.app.get('io');
+    if (io) {
+      io.in(`user:${req.user.id}`).socketsLeave(`channel:${channel._id}`);
+      io.to(`channel:${channel._id}`).emit('channel:member_left', { channelId: channel._id, userId: req.user.id });
+    }
+
+    res.json({ message: 'Left channel successfully', channelId: channel._id });
   } catch (error) {
-    res.status(500).json({ message: 'Server error joining channel.' });
+    res.status(500).json({ message: 'Server error leaving channel.' });
   }
 });
 
-// POST /api/channels/dm/:targetUserId - Get or Create DM channel
+// POST /api/channels/dm/:targetUserId - Get or Create DM channel (race-safe via dmKey)
 router.post('/dm/:targetUserId', authMiddleware, async (req, res) => {
   try {
     const currentUserId = req.user.id;
@@ -151,28 +159,45 @@ router.post('/dm/:targetUserId', authMiddleware, async (req, res) => {
       return res.status(400).json({ message: 'Cannot create a DM with yourself.' });
     }
 
+    if (!mongoose.isValidObjectId(targetUserId)) {
+      return res.status(400).json({ message: 'Invalid target user ID.' });
+    }
+
     const targetUser = await User.findById(targetUserId);
     if (!targetUser) {
       return res.status(404).json({ message: 'Target user not found.' });
     }
 
-    // Search for existing DM between these two users
+    const dmKey = [currentUserId, targetUserId].sort().join(':');
+
     let channel = await Channel.findOne({
-      isDM: true,
-      memberIds: { $all: [currentUserId, targetUserId] },
+      $or: [
+        { dmKey },
+        { isDM: true, memberIds: { $all: [currentUserId, targetUserId] } },
+      ],
     }).populate('memberIds', 'name username avatarInitial avatarColor isOnline lastSeen');
 
     let isNew = false;
+    if (channel && !channel.dmKey) {
+      channel.dmKey = dmKey;
+      await channel.save();
+    }
+
     if (!channel) {
       isNew = true;
-      channel = new Channel({
-        name: `dm-${currentUserId}-${targetUserId}`,
-        isDM: true,
-        memberIds: [currentUserId, targetUserId],
-        createdBy: currentUserId,
-      });
-
-      await channel.save();
+      try {
+        channel = new Channel({
+          name: `dm-${dmKey}`,
+          isDM: true,
+          dmKey,
+          memberIds: [currentUserId, targetUserId],
+          createdBy: currentUserId,
+        });
+        await channel.save();
+      } catch (e) {
+        if (e.code !== 11000) throw e;
+        channel = await Channel.findOne({ dmKey });
+      }
       await channel.populate('memberIds', 'name username avatarInitial avatarColor isOnline lastSeen');
     }
 
@@ -180,8 +205,9 @@ router.post('/dm/:targetUserId', authMiddleware, async (req, res) => {
       const io = req.app.get('io');
       if (io) {
         channel.memberIds.forEach((m) => {
-          const memberIdStr = typeof m === 'object' ? m._id.toString() : m.toString();
-          io.to(`user:${memberIdStr}`).emit('channel:created', channel);
+          const id = (m._id || m).toString();
+          io.in(`user:${id}`).socketsJoin(`channel:${channel._id}`);
+          io.to(`user:${id}`).emit('channel:created', channel);
         });
       }
     }
@@ -193,7 +219,7 @@ router.post('/dm/:targetUserId', authMiddleware, async (req, res) => {
   }
 });
 
-// DELETE /api/channels/:id - Delete channel / DM chat and all its messages
+// DELETE /api/channels/:id - Delete group channel (Creator only) or DM chat
 router.delete('/:id', authMiddleware, async (req, res) => {
   try {
     const channelId = req.params.id;
@@ -203,11 +229,10 @@ router.delete('/:id', authMiddleware, async (req, res) => {
       return res.status(404).json({ message: 'Channel or chat not found.' });
     }
 
-    // Check permissions
     const isMember = channel.memberIds.some((m) => m.toString() === req.user.id);
     const isCreator = channel.createdBy && channel.createdBy.toString() === req.user.id;
 
-    if (!isMember && !isCreator) {
+    if (channel.isDM ? !isMember : !isCreator) {
       return res.status(403).json({ message: 'Not authorized to delete this chat.' });
     }
 
@@ -217,12 +242,13 @@ router.delete('/:id', authMiddleware, async (req, res) => {
     // Delete the channel itself
     await Channel.findByIdAndDelete(channelId);
 
-    // Notify all members via Socket.io
+    // Socket cleanup & notification
     const io = req.app.get('io');
     if (io) {
+      io.in(`channel:${channelId}`).socketsLeave(`channel:${channelId}`);
       channel.memberIds.forEach((m) => {
-        const memberIdStr = typeof m === 'object' ? m._id.toString() : m.toString();
-        io.to(`user:${memberIdStr}`).emit('channel:deleted', { channelId });
+        const id = (m._id || m).toString();
+        io.to(`user:${id}`).emit('channel:deleted', { channelId });
       });
     }
 

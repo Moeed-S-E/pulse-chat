@@ -1,6 +1,9 @@
 /**
- * PulseChat End-to-End Encryption (E2EE) Utility
- * Uses browser-native Web Crypto API (AES-GCM 256-bit)
+ * PulseChat Client-Side Encryption Utility
+ * Uses browser-native Web Crypto API (AES-GCM 256-bit).
+ *
+ * NOTE: Keys are derived from channel ID, protecting against database leaks,
+ * but not zero-knowledge against a malicious server operator.
  */
 
 const keyCache = new Map();

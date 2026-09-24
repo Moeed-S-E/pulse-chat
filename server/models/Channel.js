@@ -17,6 +17,11 @@ const channelSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  dmKey: {
+    type: String,
+    unique: true,
+    sparse: true,
+  },
   memberIds: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

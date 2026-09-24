@@ -14,7 +14,7 @@ const logger = require('./utils/logger');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const channelRoutes = require('./routes/channelRoutes');
-const messageRoutes = require('./routes/messageRoutes');
+const { channelMessages, messageOps } = require('./routes/messageRoutes');
 const callRoutes = require('./routes/callRoutes');
 const setupSocketHandler = require('./socket/socketHandler');
 
@@ -62,8 +62,8 @@ app.use(express.urlencoded({ limit: '25mb', extended: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/channels', channelRoutes);
-app.use('/api/channels', messageRoutes);
-app.use('/api/messages', messageRoutes);
+app.use('/api/channels', channelMessages);
+app.use('/api/messages', messageOps);
 app.use('/api/calls', callRoutes);
 
 // Health check endpoint

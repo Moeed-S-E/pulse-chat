@@ -1,10 +1,13 @@
 const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
 const User = require('../models/User');
 const Message = require('../models/Message');
 const Channel = require('../models/Channel');
 const CallLog = require('../models/CallLog');
 const logger = require('../utils/logger');
+const { getMemberChannel, emitToMembers } = require('../utils/access');
 
+const MAX_MEDIA_CHARS = 10_000_000;
 const activeSockets = new Map(); // userId -> Set of socketIds
 
 const setupSocketHandler = (io) => {
@@ -40,9 +43,7 @@ const setupSocketHandler = (io) => {
 
     // Automatically join all channel socket rooms for this user
     try {
-      const userChannels = await Channel.find({
-        $or: [{ isDM: false }, { memberIds: userId }],
-      }).select('_id');
+      const userChannels = await Channel.find({ memberIds: userId }).select('_id');
       userChannels.forEach((c) => {
         socket.join(`channel:${c._id}`);
       });
@@ -58,11 +59,14 @@ const setupSocketHandler = (io) => {
       console.error('Error updating online status:', err);
     }
 
-    // Join channel room
-    socket.on('channel:join', ({ channelId }) => {
+    // Join channel room — verify membership
+    socket.on('channel:join', async ({ channelId }) => {
       if (channelId) {
-        socket.join(`channel:${channelId}`);
-        console.log(`[Socket] ${socket.username} joined channel:${channelId}`);
+        const channel = await getMemberChannel(channelId, userId);
+        if (channel) {
+          socket.join(`channel:${channelId}`);
+          console.log(`[Socket] ${socket.username} joined channel:${channelId}`);
+        }
       }
     });
 
@@ -73,10 +77,20 @@ const setupSocketHandler = (io) => {
       }
     });
 
-    // Send chat message
+    // Send chat message — verify membership, broadcast rules, sizes
     socket.on('message:send', async ({ channelId, content, messageType, mediaUrl }) => {
       try {
         if (!channelId) return;
+
+        const channel = await getMemberChannel(channelId, userId);
+        if (!channel) return socket.emit('error', { message: 'You are not a member of this chat.' });
+        if (channel.isBroadcast && channel.createdBy?.toString() !== String(userId)) {
+          return socket.emit('error', { message: 'Only the owner can post to a broadcast list.' });
+        }
+        if (typeof content !== 'string' && typeof mediaUrl !== 'string') return;
+        if ((content?.length || 0) > MAX_MEDIA_CHARS || (mediaUrl?.length || 0) > MAX_MEDIA_CHARS) {
+          return socket.emit('error', { message: 'Message is too large.' });
+        }
 
         const type = messageType === 'image' ? 'image' : 'text';
 
@@ -100,8 +114,8 @@ const setupSocketHandler = (io) => {
         // Broadcast to current channel room
         io.to(`channel:${channelId}`).emit('message:new', message);
 
-        // Broadcast sidebar lastMessage update to all connected users
-        io.emit('channel:last_message', { channelId, lastMessage: message });
+        // Broadcast sidebar lastMessage update to channel members ONLY
+        emitToMembers(io, channel, 'channel:last_message', { channelId, lastMessage: message });
       } catch (err) {
         console.error('Error handling message:send:', err);
         socket.emit('error', { message: 'Failed to send message.' });
@@ -239,21 +253,24 @@ const setupSocketHandler = (io) => {
       // Log system call message in chat thread if channelId exists
       if (channelId) {
         try {
-          const callMsg = new Message({
-            channelId,
-            senderId: userId,
-            content: `Video call ended · ${duration || '00:00'}`,
-            messageType: 'system_call',
-            callDuration: duration || '00:00',
-          });
+          const channel = await getMemberChannel(channelId, userId);
+          if (channel) {
+            const callMsg = new Message({
+              channelId,
+              senderId: userId,
+              content: `Video call ended · ${duration || '00:00'}`,
+              messageType: 'system_call',
+              callDuration: duration || '00:00',
+            });
 
-          await callMsg.save();
-          await callMsg.populate('senderId', 'name username avatarInitial avatarColor bio isOnline');
+            await callMsg.save();
+            await callMsg.populate('senderId', 'name username avatarInitial avatarColor bio isOnline');
 
-          await Channel.findByIdAndUpdate(channelId, { updatedAt: new Date() });
+            await Channel.findByIdAndUpdate(channelId, { updatedAt: new Date() });
 
-          io.to(`channel:${channelId}`).emit('message:new', callMsg);
-          io.emit('channel:last_message', { channelId, lastMessage: callMsg });
+            io.to(`channel:${channelId}`).emit('message:new', callMsg);
+            emitToMembers(io, channel, 'channel:last_message', { channelId, lastMessage: callMsg });
+          }
         } catch (err) {
           logger.error('Error logging system call message:', err);
         }
@@ -382,7 +399,7 @@ const setupSocketHandler = (io) => {
 
           // Grace period timeout before marking offline
           setTimeout(async () => {
-            if (!activeSockets.has(userId)) {
+            if (!activeSockets.has(userId) && mongoose.connection.readyState === 1) {
               try {
                 await User.findByIdAndUpdate(userId, { isOnline: false, lastSeen: new Date() });
                 io.emit('presence:update', { userId, isOnline: false });

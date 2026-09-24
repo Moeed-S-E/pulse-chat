@@ -395,11 +395,11 @@ export default function SettingsPage() {
                         Privacy & Encryption
                       </h3>
                       <p className="text-xs text-slate-500 dark:text-slate-400">
-                        Manage end-to-end security settings and visibility preferences
+                        Manage encryption settings and visibility preferences
                       </p>
                     </div>
 
-                    {/* E2EE Status Card */}
+                    {/* Encryption Status Card */}
                     <div className="p-5 rounded-2xl bg-gradient-to-r from-slate-900 to-emerald-950 text-white border border-emerald-900/60 shadow-md space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2.5">
@@ -407,8 +407,8 @@ export default function SettingsPage() {
                             <ShieldCheck className="w-5 h-5" />
                           </div>
                           <div>
-                            <h4 className="text-xs font-black tracking-wide text-white">End-to-End Encryption (E2EE)</h4>
-                            <p className="text-[11px] text-emerald-200">AES-256 GCM client-side cryptography</p>
+                            <h4 className="text-xs font-black tracking-wide text-white">Transport Encryption & Client-Side AES-GCM</h4>
+                            <p className="text-[11px] text-emerald-200">AES-GCM pre-storage encryption</p>
                           </div>
                         </div>
                         <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">

@@ -235,10 +235,7 @@ export default function Sidebar({
                   isSelected={isSelected}
                   currentUser={user}
                   isOnline={isOnline}
-                  onClick={() => {
-                    onSelectChannel(c);
-                    if (onSelectView) onSelectView('chats');
-                  }}
+                  onClick={() => onSelectChannel(c)}
                 />
               );
             })
