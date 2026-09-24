@@ -11,7 +11,6 @@ import {
   playCallConnectedSound,
   playCallEndedSound,
   showDesktopNotification,
-  requestNotificationPermission,
 } from '../utils/soundEffects';
 
 export const CallContext = createContext(null);
@@ -56,8 +55,6 @@ export const CallProvider = ({ children }) => {
 
   // Sound effects and ringtone controller based on call state
   useEffect(() => {
-    requestNotificationPermission();
-
     if (callState === 'incoming') {
       playIncomingRingtone();
     } else if (callState === 'outgoing') {

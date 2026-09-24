@@ -10,7 +10,7 @@ import Input from '../ui/Input';
 import Button from '../ui/Button';
 import {
   UserPlus, Copy, Check, Mic, MicOff, Video, VideoOff, PhoneOff,
-  Maximize2, Minimize2, Users, Search, AtSign, CheckCircle2, X
+  Maximize2, Minimize2, Users, AtSign, CheckCircle2
 } from 'lucide-react';
 
 // Individual Video Tile component for attached MediaStream
@@ -308,7 +308,7 @@ export default function ActiveCallOverlay() {
       </Modal>
 
       {/* --- Top Header Bar --- */}
-      <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+      <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-slate-800">
         <div className="flex items-center gap-3">
           <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
           <div>
@@ -323,7 +323,7 @@ export default function ActiveCallOverlay() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {/* Add Participant Button */}
           <button
             onClick={() => setIsInviteModalOpen(true)}
@@ -335,7 +335,7 @@ export default function ActiveCallOverlay() {
           </button>
 
           {/* View Mode Switcher */}
-          <div className="flex bg-slate-900 border border-slate-800 p-1 rounded-xl text-xs font-semibold">
+          <div className="hidden sm:flex bg-slate-900 border border-slate-800 p-1 rounded-xl text-xs font-semibold">
             <button
               onClick={() => setViewMode('voice')}
               className={`px-3 py-1.5 rounded-lg transition-all ${isVoiceView ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'

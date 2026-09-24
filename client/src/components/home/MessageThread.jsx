@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Video, X, ExternalLink, Lock, Pencil, Trash2, CornerUpRight, Copy, Check, MoreHorizontal
 } from 'lucide-react';
-import { decryptMessage, encryptMessage } from '../../utils/crypto';
+import { decryptMessage } from '../../utils/crypto';
 import { useToast } from '../../context/ToastContext';
 
 function MessageItem({
@@ -22,6 +22,18 @@ function MessageItem({
   const [showMenu, setShowMenu] = useState(false);
   const [copied, setCopied] = useState(false);
   const { showToast } = useToast();
+  const itemRef = useRef(null);
+
+  useEffect(() => {
+    if (!showMenu) return;
+    const handleClickOutside = (e) => {
+      if (itemRef.current && !itemRef.current.contains(e.target)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener('pointerdown', handleClickOutside);
+    return () => document.removeEventListener('pointerdown', handleClickOutside);
+  }, [showMenu]);
 
   useEffect(() => {
     let isMounted = true;
@@ -100,7 +112,7 @@ function MessageItem({
   }
 
   return (
-    <div className={`flex items-end space-x-2 group relative ${isMe ? 'justify-end' : 'justify-start'}`}>
+    <div ref={itemRef} className={`flex items-end space-x-2 group relative ${isMe ? 'justify-end' : 'justify-start'}`}>
       {!isMe && (
         <div className="w-7 h-7 rounded-full pulse-gradient-bg flex items-center justify-center text-white font-bold text-xs shrink-0 mb-1">
           {msg.senderId?.avatarInitial || msg.senderId?.name?.charAt(0) || 'U'}
@@ -203,12 +215,24 @@ function MessageItem({
           )}
         </div>
 
-        {/* Floating Quick Actions Bar on Hover / Click */}
+        {/* Touch & Hover Message Actions Menu Toggle */}
         {!msg.isDeleted && !isEditing && (
+          <button
+            type="button"
+            onClick={() => setShowMenu((v) => !v)}
+            aria-label="Message actions"
+            className="absolute -top-2 right-1 z-10 w-6 h-6 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow flex items-center justify-center md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+          >
+            <MoreHorizontal className="w-3.5 h-3.5" />
+          </button>
+        )}
+
+        {/* Dropdown Actions Menu */}
+        {showMenu && !msg.isDeleted && !isEditing && (
           <div
-            className={`absolute top-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center space-x-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-1 shadow-lg z-20 ${
-              isMe ? '-left-28' : '-right-28'
-            }`}
+            className={`absolute z-30 top-full mt-1 ${
+              isMe ? 'right-0' : 'left-0'
+            } flex items-center space-x-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-1 shadow-lg`}
           >
             <button
               onClick={handleCopy}
@@ -218,7 +242,10 @@ function MessageItem({
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
             </button>
             <button
-              onClick={() => onOpenForwardModal(msg, decryptedText, decryptedImage)}
+              onClick={() => {
+                setShowMenu(false);
+                onOpenForwardModal(msg, decryptedText, decryptedImage);
+              }}
               title="Forward message"
               className="p-1 rounded-lg text-slate-500 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-slate-700 transition-colors"
             >
