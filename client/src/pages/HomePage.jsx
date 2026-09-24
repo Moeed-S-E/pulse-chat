@@ -10,6 +10,7 @@ import Button from '../components/ui/Button';
 import { Hash, Search, Check, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
+import { useToast } from '../context/ToastContext';
 import { apiFetch } from '../config/api';
 import { decryptMessage } from '../utils/crypto';
 import {

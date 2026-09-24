@@ -6,6 +6,7 @@ import MessageInput from './MessageInput';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
 import { useCall } from '../../context/CallContext';
+import { useToast } from '../../context/ToastContext';
 import { apiFetch } from '../../config/api';
 
 import { encryptMessage } from '../../utils/crypto';
