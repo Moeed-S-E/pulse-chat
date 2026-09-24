@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Video, X, ExternalLink, Lock, Pencil, Trash2, CornerUpRight, Copy, Check, MoreHorizontal
+  Video, Phone, X, ExternalLink, Lock, Pencil, Trash2, CornerUpRight, Copy, Check, MoreHorizontal
 } from 'lucide-react';
 import { decryptMessage } from '../../utils/crypto';
 import { useToast } from '../../context/ToastContext';
@@ -10,13 +10,14 @@ function MessageItem({
   currentUser,
   isDM,
   onStartVideoCall,
+  onStartVoiceCall,
   setActiveLightboxImg,
   onEditMessage,
   onDeleteMessage,
   onOpenForwardModal,
 }) {
-  const [decryptedText, setDecryptedText] = useState(msg.content);
-  const [decryptedImage, setDecryptedImage] = useState(msg.mediaUrl || msg.content);
+  const [decryptedText, setDecryptedText] = useState(msg.content?.startsWith('ENC:') ? 'Decrypting...' : msg.content);
+  const [decryptedImage, setDecryptedImage] = useState((msg.mediaUrl || msg.content)?.startsWith('ENC:') ? '' : (msg.mediaUrl || msg.content));
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState('');
   const [showMenu, setShowMenu] = useState(false);
@@ -68,11 +69,18 @@ function MessageItem({
   const isImage = msg.messageType === 'image';
 
   const handleCopy = () => {
-    navigator.clipboard?.writeText(decryptedText);
-    setCopied(true);
-    showToast('Message text copied to clipboard', 'success');
-    setShowMenu(false);
-    setTimeout(() => setCopied(false), 2000);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(decryptedText).then(() => {
+        setCopied(true);
+        showToast('Message text copied to clipboard', 'success');
+        setShowMenu(false);
+        setTimeout(() => setCopied(false), 2000);
+      }).catch(() => {
+        showToast('Clipboard access denied', 'error');
+      });
+    } else {
+      showToast('Clipboard not supported', 'error');
+    }
   };
 
   const handleStartEdit = () => {
@@ -95,13 +103,14 @@ function MessageItem({
   };
 
   if (isSystemCall) {
+    const isAudio = msg.content?.includes('voice');
     return (
       <div className="flex justify-center my-3">
         <div className="px-4 py-2 rounded-2xl bg-white dark:bg-[#1E293B] border border-slate-200/80 dark:border-slate-700/80 shadow-sm flex items-center space-x-2 text-xs font-bold text-slate-700 dark:text-slate-200">
-          <Video className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+          {isAudio ? <Phone className="w-4 h-4 text-emerald-500 dark:text-emerald-400" /> : <Video className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />}
           <span>{decryptedText}</span>
           <button
-            onClick={onStartVideoCall}
+            onClick={isAudio ? onStartVoiceCall : onStartVideoCall}
             className="ml-2 text-emerald-600 dark:text-emerald-400 hover:underline font-extrabold cursor-pointer"
           >
             Call back
@@ -285,6 +294,7 @@ export default function MessageThread({
   typingUsers,
   messagesEndRef,
   onStartVideoCall,
+  onStartVoiceCall,
   onEditMessage,
   onDeleteMessage,
   onForwardMessage,
@@ -436,6 +446,7 @@ export default function MessageThread({
             currentUser={currentUser}
             isDM={isDM}
             onStartVideoCall={onStartVideoCall}
+            onStartVoiceCall={onStartVoiceCall}
             setActiveLightboxImg={setActiveLightboxImg}
             onEditMessage={onEditMessage}
             onDeleteMessage={onDeleteMessage}

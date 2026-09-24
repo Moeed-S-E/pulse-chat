@@ -15,6 +15,7 @@ export default function ChatView({ channel, channels = [], onBack }) {
   const [inputText, setInputText] = useState('');
   const [typingUsers, setTypingUsers] = useState(new Set());
   const [loading, setLoading] = useState(false);
+  const { showToast } = useToast();
 
   const { user, token } = useAuth();
   const { socket, onlineUsers } = useSocket();
@@ -33,25 +34,35 @@ export default function ChatView({ channel, channels = [], onBack }) {
 
   useEffect(() => {
     if (!channel?._id || !token) return;
+    let cancelled = false;
 
     const fetchMessages = async () => {
       setLoading(true);
+      setMessages([]);
+      setTypingUsers(new Set());
+      setHasMore(true);
+
       try {
-        const res = await apiFetch(`/api/channels/${channel._id}/messages`, {
+        const res = await apiFetch(`/api/channels/${channel._id}/messages?limit=50`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (res.ok) {
-          const data = await res.json();
-          setMessages(data.messages);
-        }
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        if (cancelled) return;
+        
+        setMessages((live) => {
+          const ids = new Set(data.messages.map((m) => m._id));
+          return [...data.messages, ...live.filter((m) => !ids.has(m._id))];
+        });
       } catch (err) {
         console.error('Error fetching messages:', err);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     fetchMessages();
+    return () => { cancelled = true; };
   }, [channel?._id, token]);
 
   useEffect(() => {
@@ -61,7 +72,7 @@ export default function ChatView({ channel, channels = [], onBack }) {
 
     const handleNewMessage = (msg) => {
       if (msg.channelId === channel._id) {
-        setMessages((prev) => [...prev, msg]);
+        setMessages((prev) => prev.some((m) => m._id === msg._id) ? prev : [...prev, msg]);
       }
     };
 
@@ -103,6 +114,8 @@ export default function ChatView({ channel, channels = [], onBack }) {
     socket.on('message:update', handleUpdateMessage);
     socket.on('message:delete', handleDeleteMessageEvent);
     socket.on('typing:update', handleTypingUpdate);
+    socket.on('error', (err) => showToast(err.message || 'Socket error', 'error'));
+    socket.on('connect_error', (err) => showToast('Connection error: ' + err.message, 'error'));
 
     return () => {
       socket.emit('channel:leave', { channelId: channel._id });
@@ -114,17 +127,31 @@ export default function ChatView({ channel, channels = [], onBack }) {
   }, [socket, channel?._id]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, typingUsers]);
+    if (messagesEndRef.current) {
+      const el = messagesEndRef.current.parentElement;
+      if (!el) return;
+      const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+      const lastMsgIsMine = messages[messages.length - 1]?.senderId?._id === user?._id || messages[messages.length - 1]?.senderId === user?._id;
+      if (nearBottom || lastMsgIsMine) {
+        messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  }, [messages, typingUsers, user?._id]);
+
+  const isTypingRef = useRef(false);
 
   const handleInputChange = (e) => {
     setInputText(e.target.value);
 
     if (socket && channel?._id) {
-      socket.emit('typing:start', { channelId: channel._id });
+      if (!isTypingRef.current) {
+        socket.emit('typing:start', { channelId: channel._id });
+        isTypingRef.current = true;
+      }
 
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       typingTimeoutRef.current = setTimeout(() => {
+        isTypingRef.current = false;
         socket.emit('typing:stop', { channelId: channel._id });
       }, 1500);
     }
@@ -146,6 +173,7 @@ export default function ChatView({ channel, channels = [], onBack }) {
     });
 
     socket.emit('typing:stop', { channelId: channel._id });
+    isTypingRef.current = false;
   };
 
   const handleSendImage = async (base64Data) => {

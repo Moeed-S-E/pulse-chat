@@ -70,6 +70,18 @@ const VideoTile = ({ stream, isLocal, name, username, isMuted, isCameraOff, clas
   );
 };
 
+// Audible voice view renderer
+const RemoteAudio = ({ stream }) => {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (ref.current && ref.current.srcObject !== stream) {
+      ref.current.srcObject = stream;
+      ref.current.play?.().catch(() => {});
+    }
+  }, [stream]);
+  return <audio ref={ref} autoPlay playsInline />;
+};
+
 export default function ActiveCallOverlay() {
   const callContext = useContext(CallContext);
   const {
@@ -369,6 +381,7 @@ export default function ActiveCallOverlay() {
         {isVoiceView ? (
           /* FULL SCREEN VOICE CALL PREVIEW */
           <div className="flex flex-col items-center justify-center text-center p-8 bg-slate-900/60 rounded-3xl border border-slate-800/80 max-w-lg w-full shadow-2xl relative overflow-hidden">
+            {remoteStreams.map((p) => <RemoteAudio key={p.peerId} stream={p.stream} />)}
             <div className="absolute w-72 h-72 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none animate-pulse"></div>
 
             <div className="relative mb-6">

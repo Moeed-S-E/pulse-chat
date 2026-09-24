@@ -23,7 +23,6 @@ export default function Sidebar({
   onSelectView,
   onOpenConnect,
   onOpenCreateChannel,
-  onOpenJoinCall,
   loading,
 }) {
   const [filterTab, setFilterTab] = useState('all'); // 'all' | 'dms' | 'channels'

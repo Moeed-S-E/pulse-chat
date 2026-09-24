@@ -263,6 +263,8 @@ function EditorialCursor() {
     const cursor = cursorRef.current;
     if (!cursor) return;
 
+    if (window.matchMedia('(pointer: coarse)').matches) return;
+
     let mouseX = 0;
     let mouseY = 0;
     let ballX = 0;
@@ -283,6 +285,7 @@ function EditorialCursor() {
 
     window.addEventListener('mousemove', onMouseMove);
 
+    let rafId;
     const render = () => {
       ballX += (mouseX - ballX) * 0.18;
       ballY += (mouseY - ballY) * 0.18;
@@ -290,11 +293,12 @@ function EditorialCursor() {
         x: ballX,
         y: ballY,
       });
-      requestAnimationFrame(render);
+      rafId = requestAnimationFrame(render);
     };
     render();
 
     return () => {
+      cancelAnimationFrame(rafId);
       window.removeEventListener('mousemove', onMouseMove);
     };
   }, []);
@@ -754,15 +758,9 @@ export default function LandingPage() {
       });
     });
 
-    function raf(time) {
-      lenis.raf(time);
-      requestAnimationFrame(raf);
-    }
-    requestAnimationFrame(raf);
-
-    gsap.ticker.add((time) => {
-      lenis.raf(time * 1000);
-    });
+    const tick = (time) => lenis.raf(time * 1000);
+    gsap.ticker.add(tick);
+    gsap.ticker.lagSmoothing(0);
 
     const ctx = gsap.context(() => {
       if (!showPreloader) {
@@ -968,6 +966,7 @@ export default function LandingPage() {
     });
 
     return () => {
+      gsap.ticker.remove(tick);
       ctx.revert();
       lenis.destroy();
     };

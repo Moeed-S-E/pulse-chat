@@ -27,7 +27,7 @@ export const warmupServer = () => {
   try {
     const url = getApiUrl('/api/health');
     fetch(url, { method: 'GET', cache: 'no-store' }).catch(() => {});
-  } catch (e) {
+  } catch {
     // Ignore initial background warmup errors
   }
 };

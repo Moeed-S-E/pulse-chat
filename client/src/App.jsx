@@ -10,7 +10,8 @@ import { ThemeProvider } from './context/ThemeContext';
 import AuthPage from './pages/AuthPage';
 import HomePage from './pages/HomePage';
 import SettingsPage from './pages/SettingsPage';
-import LandingPage from './pages/LandingPage';
+
+const LandingPage = React.lazy(() => import('./pages/LandingPage'));
 
 import ToastSnackbarContainer from './components/ui/ToastSnackbarContainer';
 import ActiveCallOverlay from './components/calls/ActiveCallOverlay';
@@ -121,42 +122,44 @@ export default function App() {
                   {/* Backend Health Check 15s Timer Keep-Alive */}
                   <HealthKeepAlive />
 
-                  <Routes>
-                    <Route path="/" element={<LandingPage />} />
-                    <Route
-                      path="/signup"
-                      element={
-                        <PublicOnlyRoute>
-                          <AuthPage mode="signup" />
-                        </PublicOnlyRoute>
-                      }
-                    />
-                    <Route
-                      path="/login"
-                      element={
-                        <PublicOnlyRoute>
-                          <AuthPage mode="login" />
-                        </PublicOnlyRoute>
-                      }
-                    />
-                    <Route
-                      path="/app"
-                      element={
-                        <ProtectedRoute>
-                          <HomePage />
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/settings"
-                      element={
-                        <ProtectedRoute>
-                          <SettingsPage />
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                  </Routes>
+                  <React.Suspense fallback={<div className="min-h-screen bg-[#0B0B0B]" />}>
+                    <Routes>
+                      <Route path="/" element={<LandingPage />} />
+                      <Route
+                        path="/signup"
+                        element={
+                          <PublicOnlyRoute>
+                            <AuthPage mode="signup" />
+                          </PublicOnlyRoute>
+                        }
+                      />
+                      <Route
+                        path="/login"
+                        element={
+                          <PublicOnlyRoute>
+                            <AuthPage mode="login" />
+                          </PublicOnlyRoute>
+                        }
+                      />
+                      <Route
+                        path="/app"
+                        element={
+                          <ProtectedRoute>
+                            <HomePage />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/settings"
+                        element={
+                          <ProtectedRoute>
+                            <SettingsPage />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
+                  </React.Suspense>
                 </PageTransitionLayout>
               </CallProvider>
             </ToastProvider>

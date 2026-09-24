@@ -50,7 +50,7 @@ export default function SignUpForm() {
           const data = await res.json();
           setUsernameStatus({ state: 'taken', message: data.message || 'Invalid username.' });
         }
-      } catch (err) {
+      } catch {
         setUsernameStatus({ state: 'idle', message: '' });
       }
     }, 300);

@@ -45,8 +45,41 @@ export default function ChatHeader({
     setMenuOpen(false);
   };
 
+  const [isMuted, setIsMuted] = useState(() => {
+    try {
+      const muted = JSON.parse(localStorage.getItem('pulse_muted') || '[]');
+      return muted.includes(channel?._id);
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      const muted = JSON.parse(localStorage.getItem('pulse_muted') || '[]');
+      setIsMuted(muted.includes(channel?._id));
+    } catch {
+      setIsMuted(false);
+    }
+  }, [channel?._id]);
+
   const handleMuteToggle = () => {
-    showToast(`Notifications muted for ${isDM ? otherMember?.name : channel.name}`, 'info');
+    if (!channel?._id) return;
+    try {
+      let muted = JSON.parse(localStorage.getItem('pulse_muted') || '[]');
+      if (muted.includes(channel._id)) {
+        muted = muted.filter(id => id !== channel._id);
+        setIsMuted(false);
+        showToast(`Notifications unmuted for ${isDM ? otherMember?.name : channel.name}`, 'success');
+      } else {
+        muted.push(channel._id);
+        setIsMuted(true);
+        showToast(`Notifications muted for ${isDM ? otherMember?.name : channel.name}`, 'info');
+      }
+      localStorage.setItem('pulse_muted', JSON.stringify(muted));
+    } catch (e) {
+      console.error(e);
+    }
     setMenuOpen(false);
   };
 
@@ -212,7 +245,7 @@ export default function ChatHeader({
               className="w-full text-left px-3 py-2 text-xs font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center space-x-2.5 transition-colors cursor-pointer text-slate-700 dark:text-slate-300"
             >
               <BellOff className="w-4 h-4 text-amber-500" />
-              <span>Mute Notifications</span>
+              <span>{isMuted ? 'Unmute Notifications' : 'Mute Notifications'}</span>
             </button>
 
             <div className="pt-1 mt-1 border-t border-slate-100 dark:border-slate-800">

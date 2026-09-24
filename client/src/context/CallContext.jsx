@@ -156,7 +156,7 @@ export const CallProvider = ({ children }) => {
         localStreamRef.current = s;
         setLocalStream(s);
         return s;
-      } catch (err) {
+      } catch {
         if (!audioOnly) {
           try {
             const s = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
@@ -242,13 +242,15 @@ export const CallProvider = ({ children }) => {
     };
 
     pc.ontrack = (event) => {
-      if (event.streams && event.streams[0]) {
-        const stream = event.streams[0];
-        updateRemoteStreams((prev) => {
-          const filtered = prev.filter((p) => p.peerId !== peerId);
-          return [...filtered, { peerId, username: peerUsername, stream }];
-        });
+      let stream = event.streams && event.streams[0];
+      if (!stream) {
+        stream = new MediaStream();
+        stream.addTrack(event.track);
       }
+      updateRemoteStreams((prev) => {
+        const filtered = prev.filter((p) => p.peerId !== peerId);
+        return [...filtered, { peerId, username: peerUsername, stream }];
+      });
     };
 
     peerConnectionsRef.current.set(peerId, pc);

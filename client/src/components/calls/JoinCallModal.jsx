@@ -37,7 +37,7 @@ export default function JoinCallModal({ isOpen, onClose }) {
     try {
       joinRoomCall(codeInput);
       onClose();
-    } catch (err) {
+    } catch {
       setErrorMsg('Failed to join video call with this code.');
     }
   };

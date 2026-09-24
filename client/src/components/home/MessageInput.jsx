@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Send, Paperclip, Image as ImageIcon } from 'lucide-react';
+import { prepareImage } from '../../utils/image';
 
 export default function MessageInput({
   inputText,
@@ -16,7 +17,7 @@ export default function MessageInput({
     }
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -27,24 +28,25 @@ export default function MessageInput({
       return;
     }
 
-    // Limit image file size strictly to 15 MB (15 * 1024 * 1024 bytes)
-    const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024;
+    // Limit image file size strictly to 10 MB (GIF 4 MB)
+    const MAX_FILE_SIZE_BYTES = file.type === 'image/gif' ? 4 * 1024 * 1024 : 10 * 1024 * 1024;
     if (file.size > MAX_FILE_SIZE_BYTES) {
-      setToastNotice('File size exceeds 15 MB limit. Please select a smaller file.');
+      setToastNotice(`File size exceeds limit (${file.type === 'image/gif' ? '4 MB for GIF' : '10 MB'}).`);
       setTimeout(() => setToastNotice(''), 4000);
       e.target.value = '';
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const base64Data = reader.result;
+    try {
+      const base64Data = await prepareImage(file);
       if (onSendImage) {
         onSendImage(base64Data);
       }
-      e.target.value = '';
-    };
-    reader.readAsDataURL(file);
+    } catch {
+      setToastNotice('Failed to process image.');
+      setTimeout(() => setToastNotice(''), 4000);
+    }
+    e.target.value = '';
   };
 
   return (
@@ -54,7 +56,7 @@ export default function MessageInput({
         type="file"
         ref={fileInputRef}
         onChange={handleFileChange}
-        accept="image/png, image/jpeg, image/jpg, image/gif, image/webp, image/svg+xml"
+        accept="image/png, image/jpeg, image/jpg, image/gif, image/webp"
         className="hidden"
       />
 
@@ -71,7 +73,7 @@ export default function MessageInput({
         <button
           type="button"
           onClick={handlePaperclipClick}
-          title="Share an Image (Max 15 MB)"
+          title="Share an Image (Max 10 MB)"
           className="p-2 text-slate-500 dark:text-[#B0BEC5] hover:text-emerald-600 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative cursor-pointer"
         >
           <Paperclip className="w-5 h-5" />

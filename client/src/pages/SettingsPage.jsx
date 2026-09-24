@@ -7,9 +7,9 @@ import Button from '../components/ui/Button';
 import Avatar from '../components/ui/Avatar';
 import Card from '../components/ui/Card';
 import {
-  User, AtSign, Mail, Shield, Bell, Camera, LogOut, Check, ArrowLeft,
-  FileText, Sun, Moon, Lock, Sparkles, Volume2, Eye, ShieldCheck, Palette,
-  Key, RefreshCw
+  User, AtSign, Mail, Bell, Camera, LogOut, Check, ArrowLeft,
+  FileText, Sun, Moon, Sparkles, Volume2, ShieldCheck, Palette,
+  Key
 } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -25,11 +25,8 @@ export default function SettingsPage() {
   const [bio, setBio] = useState(user?.bio || '');
   const [avatarColor, setAvatarColor] = useState(user?.avatarColor || 'emerald');
 
-  // Preference States
-  const [showOnline, setShowOnline] = useState(user?.showOnline !== false);
-  const [readReceipts, setReadReceipts] = useState(true);
-  const [callAlerts, setCallAlerts] = useState(true);
-  const [soundEffects, setSoundEffects] = useState(true);
+  const [callAlerts, setCallAlerts] = useState(localStorage.getItem('pulse_call_alerts') !== 'false');
+  const [soundEffects, setSoundEffects] = useState(localStorage.getItem('pulse_sound') !== 'false');
 
   // Status feedback
   const [successMsg, setSuccessMsg] = useState('');
@@ -37,12 +34,12 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false);
 
   const avatarColors = [
-    { id: 'emerald', name: 'Emerald Green', bg: 'bg-emerald-600', ring: 'ring-emerald-500' },
-    { id: 'teal', name: 'Teal Forest', bg: 'bg-teal-600', ring: 'ring-teal-500' },
-    { id: 'rose', name: 'Crimson Rose', bg: 'bg-rose-600', ring: 'ring-rose-500' },
-    { id: 'amber', name: 'Amber Gold', bg: 'bg-amber-500', ring: 'ring-amber-400' },
-    { id: 'teal', name: 'Deep Teal', bg: 'bg-teal-700', ring: 'ring-teal-600' },
-    { id: 'green', name: 'WhatsApp Green', bg: 'bg-green-600', ring: 'ring-green-500' },
+    { id: '#059669', name: 'Emerald Green' },
+    { id: '#0D9488', name: 'Teal Forest' },
+    { id: '#E11D48', name: 'Crimson Rose' },
+    { id: '#F59E0B', name: 'Amber Gold' },
+    { id: '#0E7490', name: 'Deep Teal' },
+    { id: '#16A34A', name: 'WhatsApp Green' },
   ];
 
   const handleSubmit = async (e) => {
@@ -53,6 +50,8 @@ export default function SettingsPage() {
 
     try {
       await updateProfile(name, username, bio, avatarColor);
+      localStorage.setItem('pulse_call_alerts', callAlerts);
+      localStorage.setItem('pulse_sound', soundEffects);
       setSuccessMsg('Settings updated successfully!');
       setTimeout(() => setSuccessMsg(''), 3500);
     } catch (err) {
@@ -219,11 +218,11 @@ export default function SettingsPage() {
                         />
                         <button
                           type="button"
-                          onClick={() => setSuccessMsg('Avatar upload feature simulated - Avatar color themes active!')}
-                          className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-md flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-700 transition-all cursor-pointer"
-                          title="Change Profile Photo"
+                          disabled
+                          className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 shadow-md flex items-center justify-center cursor-not-allowed opacity-60"
+                          title="Avatar upload coming soon"
                         >
-                          <Camera className="w-4 h-4 text-emerald-600" />
+                          <Camera className="w-4 h-4" />
                         </button>
                       </div>
 
@@ -237,8 +236,8 @@ export default function SettingsPage() {
                               key={col.id}
                               type="button"
                               onClick={() => setAvatarColor(col.id)}
-                              className={`w-7 h-7 rounded-full ${col.bg} transition-transform cursor-pointer flex items-center justify-center text-white ${avatarColor === col.id ? `ring-2 ring-offset-2 ${col.ring} scale-110` : 'hover:scale-105 opacity-80 hover:opacity-100'
-                                }`}
+                              className={`w-7 h-7 rounded-full transition-transform cursor-pointer flex items-center justify-center text-white ${avatarColor === col.id ? `ring-2 ring-offset-2 ring-emerald-500 scale-110` : 'hover:scale-105 opacity-80 hover:opacity-100'}`}
+                              style={{ backgroundColor: col.id }}
                               title={col.name}
                             >
                               {avatarColor === col.id && <Check className="w-3.5 h-3.5 stroke-[3]" />}
@@ -292,7 +291,7 @@ export default function SettingsPage() {
                       />
 
                       <Input
-                        label="Email Address (Verified)"
+                        label="Email Address"
                         icon={Mail}
                         type="email"
                         disabled
@@ -425,55 +424,13 @@ export default function SettingsPage() {
                           <Key className="w-3.5 h-3.5 text-emerald-400" />
                           <span>Local RSA/AES Subsystem Active</span>
                         </span>
-                        <button
-                          type="button"
-                          onClick={() => setSuccessMsg('Encryption keys re-validated successfully!')}
-                          className="hover:text-white flex items-center space-x-1 cursor-pointer"
-                        >
-                          <RefreshCw className="w-3 h-3" />
-                          <span>Re-sync Keys</span>
-                        </button>
                       </div>
                     </div>
 
                     {/* iOS Toggles */}
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50/70 dark:bg-pulse-dark-bg border border-slate-200/60 dark:border-slate-800/80">
-                        <div className="flex items-center space-x-3">
-                          <Eye className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                          <div>
-                            <h5 className="text-xs font-bold text-slate-900 dark:text-slate-100">Show Online Status</h5>
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400">Allow active status indicator on avatar</p>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setShowOnline(!showOnline)}
-                          className={`w-11 h-6 rounded-full transition-colors cursor-pointer relative p-0.5 ${showOnline ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
-                            }`}
-                        >
-                          <div className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform ${showOnline ? 'translate-x-5' : 'translate-x-0'
-                            }`} />
-                        </button>
-                      </div>
-
-                      <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50/70 dark:bg-pulse-dark-bg border border-slate-200/60 dark:border-slate-800/80">
-                        <div className="flex items-center space-x-3">
-                          <Lock className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                          <div>
-                            <h5 className="text-xs font-bold text-slate-900 dark:text-slate-100">Send Read Receipts</h5>
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400">Inform contacts when you read messages</p>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setReadReceipts(!readReceipts)}
-                          className={`w-11 h-6 rounded-full transition-colors cursor-pointer relative p-0.5 ${readReceipts ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'
-                            }`}
-                        >
-                          <div className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform ${readReceipts ? 'translate-x-5' : 'translate-x-0'
-                            }`} />
-                        </button>
+                      <div className="text-center text-xs text-slate-500 py-4">
+                        Read receipts and online status are currently disabled pending E2EE protocol updates.
                       </div>
                     </div>
                   </div>

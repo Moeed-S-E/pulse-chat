@@ -8,6 +8,8 @@ export function playIncomingRingtone() {
   stopIncomingRingtone();
   stopOutgoingRingback();
 
+  if (localStorage.getItem('pulse_call_alerts') === 'false') return;
+
   try {
     incomingAudio = new Audio('/sounds/ringtone.wav');
     incomingAudio.loop = true;
@@ -28,7 +30,7 @@ export function stopIncomingRingtone() {
     try {
       incomingAudio.pause();
       incomingAudio.currentTime = 0;
-    } catch (e) {}
+    } catch {}
     incomingAudio = null;
   }
 }
@@ -37,6 +39,8 @@ export function stopIncomingRingtone() {
 export function playOutgoingRingback() {
   stopOutgoingRingback();
   stopIncomingRingtone();
+
+  if (localStorage.getItem('pulse_call_alerts') === 'false') return;
 
   try {
     outgoingAudio = new Audio('/sounds/outgoing.wav');
@@ -58,7 +62,7 @@ export function stopOutgoingRingback() {
     try {
       outgoingAudio.pause();
       outgoingAudio.currentTime = 0;
-    } catch (e) {}
+    } catch {}
     outgoingAudio = null;
   }
 }
@@ -82,6 +86,8 @@ function getAudioContext() {
 export function playCallConnectedSound() {
   stopIncomingRingtone();
   stopOutgoingRingback();
+
+  if (localStorage.getItem('pulse_sound') === 'false') return;
 
   try {
     const ctx = getAudioContext();
@@ -113,6 +119,8 @@ export function playCallEndedSound() {
   stopIncomingRingtone();
   stopOutgoingRingback();
 
+  if (localStorage.getItem('pulse_sound') === 'false') return;
+
   try {
     const ctx = getAudioContext();
     if (!ctx) return;
@@ -139,6 +147,7 @@ export function playCallEndedSound() {
 
 // 5. Play Real Chat Message Notification Chime (/sounds/notification.wav)
 export function playMessageNotificationSound() {
+  if (localStorage.getItem('pulse_sound') === 'false') return;
   try {
     const notifAudio = new Audio('/sounds/notification.wav');
     notifAudio.volume = 0.75;
@@ -162,6 +171,8 @@ export function requestNotificationPermission() {
 
 export function showDesktopNotification(title, options = {}) {
   if (!('Notification' in window)) return;
+  if (localStorage.getItem('pulse_call_alerts') === 'false' && title.toLowerCase().includes('call')) return;
+  
   if (Notification.permission === 'granted') {
     try {
       const n = new Notification(title, {

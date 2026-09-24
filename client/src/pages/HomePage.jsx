@@ -88,11 +88,7 @@ export default function HomePage() {
   const selectedChannelRef = useRef(selectedChannel);
   useEffect(() => { selectedChannelRef.current = selectedChannel; }, [selectedChannel]);
 
-  const channelsRef = useRef(channels);
-  useEffect(() => { channelsRef.current = channels; }, [channels]);
 
-  const selectedChannelRef = useRef(selectedChannel);
-  useEffect(() => { selectedChannelRef.current = selectedChannel; }, [selectedChannel]);
 
   // Real-time lastMessage & channel list update via socket
   useEffect(() => {
@@ -108,8 +104,14 @@ export default function HomePage() {
       const senderId = lastMessage?.senderId?._id || lastMessage?.senderId;
       const isFromMe = senderId === currentUser?._id;
       const isOpenAndFocused = document.hasFocus() && selectedChannelRef.current?._id === channelId;
+      
+      let isMuted = false;
+      try {
+        const muted = JSON.parse(localStorage.getItem('pulse_muted') || '[]');
+        isMuted = muted.includes(channelId);
+      } catch {}
 
-      if (!isFromMe && !isOpenAndFocused && lastMessage?.messageType !== 'system_call') {
+      if (!isFromMe && !isOpenAndFocused && !isMuted && lastMessage?.messageType !== 'system_call') {
         playMessageNotificationSound();
 
         const senderName =
@@ -235,28 +237,15 @@ export default function HomePage() {
 
       if (res.ok) {
         const data = await res.json();
-        setChannels((prev) => [data.channel, ...prev]);
         handleSelectChannel(data.channel);
         resetCreateModal();
-        return;
+      } else {
+        const data = await res.json();
+        console.error('Failed to create channel:', data.message);
       }
     } catch (err) {
-      console.warn('Offline channel creation fallback');
+      console.error('Error creating channel:', err);
     }
-
-    const newChan = {
-      _id: `chan-custom-${Date.now()}`,
-      name: normalizedName,
-      description: newChannelDesc || 'Topic channel',
-      isDM: false,
-      isBroadcast: false,
-      memberIds: [currentUser?._id, ...memberIds].filter(Boolean),
-      lastMessage: null,
-    };
-
-    setChannels((prev) => [newChan, ...prev]);
-    handleSelectChannel(newChan);
-    resetCreateModal();
   };
 
   const resetCreateModal = () => {

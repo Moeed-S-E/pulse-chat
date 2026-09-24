@@ -254,7 +254,13 @@ async function runChatTests() {
       transports: ['websocket'],
     });
 
-    await new Promise((resolve) => clientSocketC.on('connect', resolve));
+    await new Promise((resolve, reject) => {
+      clientSocketC.on('connect', resolve);
+      clientSocketC.on('connect_error', (err) => {
+        console.error('Socket connection error:', err);
+        reject(err);
+      });
+    });
     clientSocketC.emit('channel:join', { channelId: dmChannelId });
 
     let messageReceivedByC = false;

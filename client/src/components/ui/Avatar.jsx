@@ -28,16 +28,19 @@ export default function Avatar({
     rose: 'bg-rose-600',
     amber: 'bg-amber-500',
     teal: 'bg-teal-600',
+    cyan: 'bg-cyan-600',
     green: 'bg-green-600',
   };
 
-  const bgClass = colorMap[avatarColor] || 'bg-emerald-600';
+  const isHex = typeof avatarColor === 'string' && /^#[0-9a-f]{6}$/i.test(avatarColor);
+  const bgClass = isHex ? '' : (colorMap[avatarColor] || 'bg-emerald-600');
   const displayInitial = initial || (name ? name.charAt(0).toUpperCase() : 'P');
 
   return (
     <div className={`relative shrink-0 ${className}`}>
       <div
         className={`${sizes[size]} rounded-full ${bgClass} flex items-center justify-center text-white font-extrabold shadow-sm transition-colors`}
+        style={isHex ? { backgroundColor: avatarColor } : undefined}
       >
         {displayInitial}
       </div>

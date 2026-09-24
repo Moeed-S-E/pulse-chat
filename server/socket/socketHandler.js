@@ -5,7 +5,7 @@ const Message = require('../models/Message');
 const Channel = require('../models/Channel');
 const CallLog = require('../models/CallLog');
 const logger = require('../utils/logger');
-
+const { JWT_SECRET } = require('../config');
 const MAX_MEDIA_CHARS = 10_000_000;
 const activeSockets = new Map(); // userId -> Set of socketIds
 const activeCalls = new Map(); // userId -> peerUserId (1:1 calls)
@@ -298,11 +298,10 @@ const setupSocketHandler = (io) => {
 
           io.to(`channel:${channelId}`).emit('message:new', callMsg);
           emitToMembers(io, channel, 'channel:last_message', { channelId, lastMessage: callMsg });
-        }
         } catch (err) {
-        logger.error('Error logging system call message:', err);
+          logger.error('Error logging system call message:', err);
+        }
       }
-    }
     });
 
   // --- Meeting Room Code WebRTC Signaling (1:M Multi-Peer Mesh) ---

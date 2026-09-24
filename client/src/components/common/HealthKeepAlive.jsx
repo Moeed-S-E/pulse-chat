@@ -1,8 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { apiFetch, warmupServer } from '../../config/api';
 
 export default function HealthKeepAlive() {
-  const [status, setStatus] = useState('warming'); // 'warming' | 'online' | 'offline'
 
   useEffect(() => {
     let isMounted = true;
@@ -12,6 +11,10 @@ export default function HealthKeepAlive() {
     warmupServer();
 
     const checkHealth = async () => {
+      if (document.hidden) {
+        timerId = setTimeout(checkHealth, 5000);
+        return;
+      }
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout per check
@@ -28,8 +31,7 @@ export default function HealthKeepAlive() {
           // Server starting up -> retry aggressively in 3s
           timerId = setTimeout(checkHealth, 3000);
         }
-      } catch (err) {
-        if (isMounted) setStatus('warming');
+      } catch {
         console.log('[Server Warmup] Waking up backend server on Render...');
         // Retry aggressively every 3 seconds during cold start
         timerId = setTimeout(checkHealth, 3000);

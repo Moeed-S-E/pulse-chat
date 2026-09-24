@@ -8,7 +8,6 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   KeyRound,
-  ShieldCheck,
   Plus,
   MessageSquare,
   Settings,
