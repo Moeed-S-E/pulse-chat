@@ -6,6 +6,7 @@ const Channel = require('../models/Channel');
 const CallLog = require('../models/CallLog');
 const logger = require('../utils/logger');
 const { getMemberChannel, emitToMembers } = require('../utils/access');
+const { JWT_SECRET } = require('../config');
 
 const MAX_MEDIA_CHARS = 10_000_000;
 const activeSockets = new Map(); // userId -> Set of socketIds
@@ -19,7 +20,7 @@ const setupSocketHandler = (io) => {
         return next(new Error('Authentication error: Token missing'));
       }
 
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'pulsechat_secret_key_dev_2026_super_secure');
+      const decoded = jwt.verify(token, JWT_SECRET);
       socket.userId = decoded.id;
       socket.username = decoded.username;
       next();

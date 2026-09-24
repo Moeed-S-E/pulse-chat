@@ -106,26 +106,28 @@ export default function LoginForm() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center space-x-1.5">
-              <KeyRound className="w-3.5 h-3.5 text-emerald-500" />
-              <span>Default Demo Accounts</span>
-            </h4>
-            <div className="bg-slate-50 dark:bg-slate-800/80 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 space-y-2 text-xs">
-              <div className="flex justify-between items-center font-mono">
-                <span className="text-slate-700 dark:text-slate-300 font-bold">@samuel</span>
-                <span className="text-slate-500 dark:text-slate-400">password123</span>
-              </div>
-              <div className="flex justify-between items-center font-mono">
-                <span className="text-slate-700 dark:text-slate-300 font-bold">@alex_rivera</span>
-                <span className="text-slate-500 dark:text-slate-400">password123</span>
-              </div>
-              <div className="flex justify-between items-center font-mono">
-                <span className="text-slate-700 dark:text-slate-300 font-bold">@jane_doe</span>
-                <span className="text-slate-500 dark:text-slate-400">password123</span>
+          {import.meta.env.DEV && (
+            <div className="space-y-2">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center space-x-1.5">
+                <KeyRound className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Default Demo Accounts</span>
+              </h4>
+              <div className="bg-slate-50 dark:bg-slate-800/80 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 space-y-2 text-xs">
+                <div className="flex justify-between items-center font-mono">
+                  <span className="text-slate-700 dark:text-slate-300 font-bold">@samuel</span>
+                  <span className="text-slate-500 dark:text-slate-400">password123</span>
+                </div>
+                <div className="flex justify-between items-center font-mono">
+                  <span className="text-slate-700 dark:text-slate-300 font-bold">@alex_rivera</span>
+                  <span className="text-slate-500 dark:text-slate-400">password123</span>
+                </div>
+                <div className="flex justify-between items-center font-mono">
+                  <span className="text-slate-700 dark:text-slate-300 font-bold">@jane_doe</span>
+                  <span className="text-slate-500 dark:text-slate-400">password123</span>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
             You can also create a new personal account anytime from the{' '}
